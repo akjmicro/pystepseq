@@ -205,24 +205,7 @@ def command_parser(phrase):
                     active_instances[comm[0]].note_tie = int(comm[3:])
                 except ValueError:
                     print('Could not parse the input value')
-        elif comm[1:3] == 'rn':
-            choice_list = None
-            if len(comm) > 3:
-                try:
-                    choice_list = eval(comm[3:])
-                except SyntaxError:
-                    print('Could not parse the given list')
-            active_instances[comm[0]].randomize_notes(
-                choice_list=choice_list)
-        elif comm[1:3] == 'rv':
-            choice_list = None
-            if len(comm) > 3:
-                try:
-                    choice_list = eval(comm[3:])
-                except SyntaxError:
-                    print('Could not parse the given list')
-            active_instances[comm[0]].randomize_volumes(
-                choice_list=choice_list)
+        # randomize lengths
         elif comm[1:3] == 'rl':
             choice_list = None
             if len(comm) > 3:
@@ -232,6 +215,36 @@ def command_parser(phrase):
                     print('Could not parse the given list')
             active_instances[comm[0]].randomize_lengths(
                 choice_list=choice_list)
+        # randomize lengths
+        elif comm[1:3] == 'rg':
+            choice_list = None
+            if len(comm) > 3:
+                try:
+                    choice_list = eval(comm[3:])
+                except SyntaxError:
+                    print('Could not parse the given list')
+            active_instances[comm[0]].randomize_gates(
+                choice_list=choice_list)
+        # randomize volumes
+        elif comm[1:3] == 'rv':
+            choice_list = None
+            if len(comm) > 3:
+                try:
+                    choice_list = eval(comm[3:])
+                except SyntaxError:
+                    print('Could not parse the given list')
+            active_instances[comm[0]].randomize_volumes(
+                choice_list=choice_list)
+        # randomize notes
+        elif comm[1:3] == 'rn':
+            choice_list = None
+            if len(comm) > 3:
+                try:
+                    choice_list = eval(comm[3:])
+                except SyntaxError:
+                    print('Could not parse the given list')
+            active_instances[comm[0]].randomize_notes(
+                choice_list=choice_list)
         elif comm[1:3] == 'rd':
             choice_lists = None, None
             if len(comm) > 3:
@@ -240,6 +253,7 @@ def command_parser(phrase):
                 except SyntaxError:
                     print('Could not parse the given lists')
             active_instances[comm[0]].randomize_drums(*choice_lists)
+        # stopping and starting voices (and the tempotrigger)
         elif comm[1:3] == r'\\':
             active_instances[comm[0]].stop(immediately=True)
         elif comm[1:3] == '//':
@@ -266,6 +280,66 @@ def command_parser(phrase):
                 print(active_instances[comm[0]].end)
             else:
                 active_instances[comm[0]].end = int(comm[2:])
+        # lengths
+        elif comm[1] == 'l':
+            if len(comm) == 2:
+                print(active_instances[comm[0]].len_list)
+            else:
+                if '=' not in comm:
+                    active_instances[comm[0]].len_list = eval(comm[2:])
+                else:
+                    parts = comm[2:].split('=')
+                    idx, val = int(parts[0]), int(parts[1])
+                    active_instances[comm[0]].len_list[idx] = eval(val)
+        # gates
+        elif comm[1] == 'g':
+            if len(comm) == 2:
+                print(active_instances[comm[0]].gate_list)
+            else:
+                if '=' not in comm:
+                    active_instances[comm[0]].gate_list = eval(comm[2:])
+                else:
+                    parts = comm[2:].split('=')
+                    idx, val = int(parts[0]), int(parts[1])
+                    active_instances[comm[0]].gate_list[idx] = eval(val)
+        # volumns
+        elif comm[1] == 'v':
+            if len(comm) == 2:
+                print(active_instances[comm[0]].vol_list)
+            else:
+                if '=' not in comm:
+                    active_instances[comm[0]].vol_list = eval(comm[2:])
+                else:
+                    parts = comm[2:].split('=')
+                    idx, val = int(parts[0]), int(parts[1])
+                    active_instances[comm[0]].vol_list[idx] = eval(val)
+        # volume 'space' (how much silence in a pattern)
+        elif comm[1] == 'p':
+            if len(comm) == 2:
+                print(active_instances[comm[0]].sp)
+            else:
+                active_instances[comm[0]].sp = int(comm[2:])
+        # scale type
+        elif comm[1] == 's':
+            if len(comm) == 2:
+                print(active_instances[comm[0]].scl.slave)
+            else:
+                active_instances[comm[0]].scl.set_scl(eval(comm[2:]))
+        # fractal note list
+        elif comm[1] == 'f':
+            myargs = eval(comm[2:])
+            active_instances[comm[0]].note_list = sspn_linear_custom(*myargs)
+        # notes
+        elif comm[1] == 'n':
+            if len(comm) == 2:
+                print(active_instances[comm[0]].note_list)
+            else:
+                if '=' not in comm:
+                    active_instances[comm[0]].note_list = eval(comm[2:])
+                else:
+                    parts = comm[2:].split('=')
+                    idx, val = int(parts[0]), int(parts[1])
+                    active_instances[comm[0]].note_list[idx] = eval(val)
         # min note, max note, transposition
         elif comm[1] == 'm':
             if len(comm) == 2:
@@ -294,55 +368,6 @@ def command_parser(phrase):
                         *min_max_trans_args)
                 except TypeError:
                     print('Cannot parse the arguments for min_max_trans')
-        # scale type
-        elif comm[1] == 's':
-            if len(comm) == 2:
-                print(active_instances[comm[0]].scl.slave)
-            else:
-                active_instances[comm[0]].scl.set_scl(eval(comm[2:]))
-        # fractal note list
-        elif comm[1] == 'f':
-            myargs = eval(comm[2:])
-            active_instances[comm[0]].note_list = sspn_linear_custom(*myargs)
-        # notes
-        elif comm[1] == 'n':
-            if len(comm) == 2:
-                print(active_instances[comm[0]].note_list)
-            else:
-                if '=' not in comm:
-                    active_instances[comm[0]].note_list = eval(comm[2:])
-                else:
-                    parts = comm[2:].split('=')
-                    idx, val = int(parts[0]), int(parts[1])
-                    active_instances[comm[0]].note_list[idx] = eval(val)
-        # volumns
-        elif comm[1] == 'v':
-            if len(comm) == 2:
-                print(active_instances[comm[0]].vol_list)
-            else:
-                if '=' not in comm:
-                    active_instances[comm[0]].vol_list = eval(comm[2:])
-                else:
-                    parts = comm[2:].split('=')
-                    idx, val = int(parts[0]), int(parts[1])
-                    active_instances[comm[0]].vol_list[idx] = eval(val)
-        # lengths
-        elif comm[1] == 'l':
-            if len(comm) == 2:
-                print(active_instances[comm[0]].len_list)
-            else:
-                if '=' not in comm:
-                    active_instances[comm[0]].len_list = eval(comm[2:])
-                else:
-                    parts = comm[2:].split('=')
-                    idx, val = int(parts[0]), int(parts[1])
-                    active_instances[comm[0]].len_list[idx] = eval(val)
-        # volume 'space' (how much silence in a pattern)
-        elif comm[1] == 'p':
-            if len(comm) == 2:
-                print(active_instances[comm[0]].sp)
-            else:
-                active_instances[comm[0]].sp = int(comm[2:])
         else:
             print("command not understood, or not implemented yet")
 

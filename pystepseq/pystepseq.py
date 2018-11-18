@@ -47,14 +47,16 @@ class Pystepseq:
         self.chn = chn
         self.step = -1
         self.end = 16    # num of note events, distinguished from beats
-        self.ticks_per_beat = 24
+        self.triggers_per_beat = 24
         self.beats_per_measure = 4  # total number of beats in a measure
-        self.ticks_per_measure = self.ticks_per_beat * self.beats_per_measure
+        self.triggers_per_measure = (self.triggers_per_beat *
+                                     self.beats_per_measure)
         self.scl = MidiScale(modal)
         self.runstate = 0
-        self.note_list = []
-        self.vol_list = []
         self.len_list = []
+        self.vol_list = []
+        self.gate_list = []
+        self.note_list = []
         self.note_noise = 'white'  # can be brown or pink, too
         self.note_depth = 5
         self.note_repeat = 0
@@ -257,11 +259,12 @@ class Pystepseq:
         total = 0
         
         # re-calc the measure length:
-        self.ticks_per_measure = self.ticks_per_beat * self.beats_per_measure
+        self.triggers_per_measure = (self.triggers_per_beat *
+                                     self.beats_per_measure)
 
         # do this while we are below the beat count:
-        while total < self.ticks_per_measure:
-            leftover = self.ticks_per_measure - total
+        while total < self.triggers_per_measure:
+            leftover = self.triggers_per_measure - total
             # filter the choices by what won't go over:
             choice_list = list(filter(lambda x: x <= leftover, choice_list))
             if not choice_list:
@@ -275,14 +278,12 @@ class Pystepseq:
         # set the endpoint
         self.end = len(self.len_list)
 
-    def randomize_notes(self, choice_list=None):
-        """randomize notes"""
+    def randomize_gates(self, choice_list=None):
+        """randomize gate lengths"""
         if choice_list is None:
-            start = 1 if self.note_noise == 'brown' else 0
-            finish = len(self.len_list)
-            getattr(self, '_note_%s' % self.note_noise)(start, finish)
+            self.gate_list = [100 for x in self.len_list]
         else:
-            self.note_list = [choice(choice_list) for i in self.len_list]
+            self.gate_list = [choice(choice_list) for i in self.len_list]
 
     def randomize_volumes(self, choice_list=None):
         """randomize volumes"""
@@ -292,6 +293,15 @@ class Pystepseq:
             getattr(self, '_vol_%s' % self.vol_noise)(start, finish)
         else:
             self.vol_list = [choice(choice_list) for i in self.len_list]
+
+    def randomize_notes(self, choice_list=None):
+        """randomize notes"""
+        if choice_list is None:
+            start = 1 if self.note_noise == 'brown' else 0
+            finish = len(self.len_list)
+            getattr(self, '_note_%s' % self.note_noise)(start, finish)
+        else:
+            self.note_list = [choice(choice_list) for i in self.len_list]
 
     def randomize_drums(self, notes=None, vols=None):
         """special method for drum sounds (snare, cymbals, etc.)"""
@@ -305,14 +315,15 @@ class Pystepseq:
 
     def initlists(self):
         self.randomize_lengths()
-        self.randomize_notes()
+        self.randomize_gates()
         self.randomize_volumes()
+        self.randomize_notes()
 
     def looper(self):
         """The looper is the heart of the sequencer"""
         from .tempotrigger import openmcastsock
         receiver = openmcastsock(self.MYGROUP, self.MYPORT)
-        tick = 0
+        trigger = 0
         self.trigger_count = 0
         self.step = -1
         self.cycle_idx = -1
@@ -322,8 +333,8 @@ class Pystepseq:
         self.sounding = 0
         self.note_length = 24  # init dummy
         while (self.runstate == 1) or (self.cycle_idx != 0):
-            tick = receiver.recv(9)
-            ticknum, cyclen = tick.split(b'|')
+            trigger = receiver.recv(9)
+            triggernum, cyclen = trigger.split(b'|')
             # proceed if it's the first of a note length, and we're running
             if (self.trigger_count == 0):
                 self.step = (self.step + 1) % self.end
@@ -333,11 +344,14 @@ class Pystepseq:
                     self.pickle_slot_recall(self.current_slot)
                     self.old_slot = self.current_slot
                 #####
+                self.note_length = int(self.len_list[self.step %
+                                                     len(self.len_list)])
+                self.vol = self.vol_list[self.step % len(self.vol_list)]
+                self.gate = self.gate_list[self.step % len(self.gate_list)]
+                self.gate_cutoff = int(round(self.note_length *
+                                             (self.gate / 100)))
                 self.note_index = self.note_list[self.step %
                                                   len(self.note_list)]
-                self.vol = self.vol_list[self.step % len(self.vol_list)]
-                self.note_length = int(self.len_list[self.step %
-                                                      len(self.len_list)])
                 ### protect against < 0 ###
                 if self.note_length < 1:  #
                     self.note_length = 1
@@ -345,6 +359,9 @@ class Pystepseq:
                 self.note = self.scl.get_note(self.note_index)
                 note_on(int(self.chn), int(self.note), int(self.vol))
                 self.old_note = self.note
+            # turn note off if the gate value indicates:
+            elif self.trigger_count == self.gate_cutoff:
+                note_off(int(), int(self.old_note))
             self.trigger_count = (self.trigger_count + 1) % self.note_length
             self.cycle_idx = (self.cycle_idx + 1) % int(cyclen)
 
