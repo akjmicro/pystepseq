@@ -31,13 +31,13 @@ from . import constants
 
 
 class Tempotrigger:
-    def __init__(self, num_ticks_per_qn=24, cycle_len=24 * 8):
+    def __init__(self, num_triggers_per_qn=24, cycle_len=24 * 8):
         self.runstate = 0
-        self.num_ticks_per_qn = num_ticks_per_qn
+        self.num_triggers_per_qn = num_triggers_per_qn
         self.cycle_len = cycle_len
         self.cycle_len_flag = self.cycle_len - 1
         self.tempo = 120
-        self.sleep_time = 60.0 / (self.tempo * self.num_ticks_per_qn)
+        self.sleep_time = 60.0 / (self.tempo * self.num_triggers_per_qn)
         # mcast sender stuff (for sending sync timestamps):
         self.MYPORT = constants.DEFAULT_MULTICAST_PORT
         self.MYGROUP = '225.0.0.250'
@@ -48,19 +48,19 @@ class Tempotrigger:
                                socket.IP_MULTICAST_TTL,
                                self.ttl)
 
-    def set_num_ticks(self, numticks):
-        self.num_ticks_per_qn = numticks
-        self.sleep_time = 60.0 / float(self.tempo * self.num_ticks_per_qn)
+    def set_num_triggers(self, numtriggers):
+        self.num_triggers_per_qn = numtriggers
+        self.sleep_time = 60.0 / float(self.tempo * self.num_triggers_per_qn)
 
     def set_tempo(self, tempo):
         self.tempo = tempo
-        self.sleep_time = 60.0 / float(tempo * self.num_ticks_per_qn)
+        self.sleep_time = 60.0 / float(tempo * self.num_triggers_per_qn)
 
     def set_cycle_len(self, cycle_len):
         self.cycle_len = cycle_len
         self.cycle_len_flag = self.cycle_len - 1
 
-    def tick(self):
+    def trigger(self):
         self.cycle_idx = self.cycle_len_flag  # just before 0
         while self.runstate == 1:
             self.target = time.time() + self.sleep_time
@@ -83,7 +83,7 @@ class Tempotrigger:
     def run(self):
         if self.runstate == 0:
             self.runstate = 1
-            _thread.start_new_thread(self.tick, ())
+            _thread.start_new_thread(self.trigger, ())
 
     def stop(self):
         if self.runstate == 1:

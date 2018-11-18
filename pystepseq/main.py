@@ -131,12 +131,12 @@ def command_parser(phrase):
             change([i.strip() for i in comm[1:].split(',')])
         elif comm[0:2] == 'tt':
             if len(comm) == 2:
-                print(t.num_ticks_per_qn)
+                print(t.num_triggers_per_qn)
             else:
                 try:
-                    t.set_num_ticks(int(comm[2:]))
+                    t.set_num_triggers(int(comm[2:]))
                 except ValueError:
-                    print('could not parse the number of ticks')
+                    print('could not parse the number of triggers')
         elif comm[0] == 't':
             if len(comm) == 1:
                 print(trig.tempo)
@@ -262,12 +262,12 @@ def command_parser(phrase):
             active_instances[comm[0]].stop()
         elif comm[1] == '/':
             active_instances[comm[0]].play()
-        # ticks per beat
+        # triggers per beat
         elif comm[1:3] == 'bb':
             if len(comm) == 3:
-                print(active_instances[comm[0]].ticks_per_beat)
+                print(active_instances[comm[0]].triggers_per_beat)
             else:
-                active_instances[comm[0]].ticks_per_beat = int(comm[3:])
+                active_instances[comm[0]].triggers_per_beat = int(comm[3:])
         # beats per measure 
         elif comm[1] == 'b':
             if len(comm) == 2:
@@ -373,7 +373,7 @@ def command_parser(phrase):
 
 
 # set up the global tempo sequencer object that 'ticks' the grid time:
-trig = Tempotrigger(24)  # 24 is the number of ticks per beat
+trig = Tempotrigger(24)  # 24 is the number of triggers per beat
 trig.set_tempo(120)  # 120 BPM default
 
 
