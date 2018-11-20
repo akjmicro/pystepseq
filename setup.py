@@ -5,7 +5,7 @@ from os import path
 
 setup(
     name="pystepseq",
-    version="2018.1118a2",
+    version="2018.1119a1",
     description=('A multi-featured commandline interface MIDI step sequencer'),
     author='Aaron Krister Johnson',
     author_email='akjmicro@gmail.com',
