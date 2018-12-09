@@ -10,6 +10,10 @@ t114   # set tempo to Q=114
 =a   # adds a new voice, 'a'
 =a4  # adds a new voice called 'a', but on MIDI channel 4 (0-15)
 -a   # stops and deletes 'a'
+zxdrums  # sets up two drum voices, 'z' for bass drum and 'x' for everything
+         # else percussive. Must coordinate these against MIDI drum instruments,
+         # e.g. Hydrogen or some program triggering drum sounds at a given
+         # MIDI channel
 ##########################################################################
 # The following examples assuming you are targeting a voice called 'a'   #
 # if you are NOT, and it's 'b' (or something else), you'd make the first #
@@ -17,6 +21,9 @@ t114   # set tempo to Q=114
 ##########################################################################
 a\     # silence 'a' (immediate with 'a\\\\')
 a/     # bring in a (immediate with 'a//')
+z/     # if you've established a bass drum voice, bring it in
+x/     # if you've established an 'everything else percussion voice', bring
+       # it in
 `a,b,c # call 'change' on the listed voices
 asBLAH # set a voice's scale to BLAH (pent, modal, chroma[tic], etc.)
 am48   # minimum note on voice 'a' is 48
