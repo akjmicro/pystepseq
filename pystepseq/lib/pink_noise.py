@@ -1,7 +1,7 @@
 """Different applications of pink noise, the intended application being
 to make 'starter' melodic shapes"""
 
-from random import randint
+from random import randint, random
 
 
 def pink_noise(number_of_dice, size_of_die):
@@ -62,8 +62,8 @@ def sspn(number_of_dice, size_of_die):  # self-similar pink noise
 
 def sspn_linear(total_length, phrase_length, size_of_die):
     """sspn_linear(total_length, phrase_length, size_of_die)
-    "self-similar pink noise", or fractal noise. This variation uses a 
-    simple linear cycle instead of the power scaling of the normal 
+    "self-similar pink noise", or fractal noise. This variation uses a
+    simple linear cycle instead of the power scaling of the normal
     'sspn' function. Returns an array, auto re-scaled so min=0"""
     array = []
     phrase = []
@@ -90,8 +90,8 @@ def sspn_linear_custom(total_length, input_phrase, layers=0):
     """sspn_linear_custom(total_length, input_phrase, layers=0)
     "self-similar pink noise", or fractal noise.  This variation uses a
     simple linear cycle instead of the power scaling of the normal 'sspn'
-    function.  When 'layers' is supplied and is greater than 0, use that 
-    number to determine the number of layers that contribute to the final 
+    function.  When 'layers' is supplied and is greater than 0, use that
+    number to determine the number of layers that contribute to the final
     texture. Returns an array, auto re-scaled so min=0"""
     output_array = []
     pointers = []

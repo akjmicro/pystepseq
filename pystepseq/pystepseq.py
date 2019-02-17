@@ -21,16 +21,11 @@
 #       MA 02110-1301, USA.
 
 # modules needed:
-import string
-import os
-import socket
 import _thread
-import time
-import struct
 import pickle
 
-from random import randint, choice
 from math import ceil, log
+from random import randint, choice
 
 # my modules:
 from pystepseq.lib.midi_functions import *
@@ -44,6 +39,7 @@ class Pystepseq:
     """
     def __init__(self, chn=0):
         from . import constants
+        from .tempotrigger import openmcastsock
         self.chn = chn
         self.step = -1
         self.end = 16    # num of note events, distinguished from beats
@@ -66,6 +62,7 @@ class Pystepseq:
         self.sp = 0
         self.MYGROUP = '225.0.0.250'
         self.MYPORT = constants.DEFAULT_MULTICAST_PORT
+        self.receiver = openmcastsock(self.MYGROUP, self.MYPORT)
         self.open_port_exists = False
         # automatic init:
         # on a Mac, the variable is a dummy...
@@ -321,8 +318,7 @@ class Pystepseq:
 
     def looper(self):
         """The looper is the heart of the sequencer"""
-        from .tempotrigger import openmcastsock
-        receiver = openmcastsock(self.MYGROUP, self.MYPORT)
+        
         trigger = 0
         self.trigger_count = 0
         self.step = -1
@@ -333,7 +329,7 @@ class Pystepseq:
         self.sounding = 0
         self.note_length = 24  # init dummy
         while (self.runstate == 1) or (self.cycle_idx != 0):
-            trigger = receiver.recv(9)
+            trigger = self.receiver.recv(9)
             triggernum, cyclen = trigger.split(b'|')
             # proceed if it's the first of a note length, and we're running
             if (self.trigger_count == 0):
@@ -370,22 +366,22 @@ class Pystepseq:
         self.step = -1
         # when loop ends, we destroy ourselves
         # (this looper thread, not the 'Pystepseq' object itself)
-        exit()
+        # exit()
 
     def play(self, immediately=False):
-        from .tempotrigger import openmcastsock
         if self.runstate == 0:
-            receiver = openmcastsock(self.MYGROUP, self.MYPORT)
             self.runstate = 1
             if not immediately:
-                while 1:
-                    packet = receiver.recv(9)
+                while True:
+                    packet = self.receiver.recv(9)
                     num, cyclen = packet.split(b'|')
                     if int(num) == int(cyclen) - 1:
                         break
             _thread.start_new_thread(self.looper, ())
 
     def stop(self, immediately=False):
+        if self.runstate == 0:
+            return
         if not immediately:
             self.runstate = 0
         else:

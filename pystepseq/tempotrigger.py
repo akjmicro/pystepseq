@@ -76,7 +76,7 @@ class Tempotrigger:
             time.sleep(self.sleep_time - 0.006)
             # accuracy tweak loop:
             nowtime = time.time()  # starting point
-            while nowtime < self.target :  # while not within 1ms
+            while nowtime < self.target:  # while not within 1ms
                 time.sleep(0.0001)
                 nowtime = time.time()  # get new moving point
 
@@ -94,21 +94,21 @@ def openmcastsock(group, port):
     """create a network mcast connection for our rhythmic metronome pulse"""
     # Import modules used only here
     import struct
-    
+
     # Create a socket
     socket_obj = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    
+
     # Allow multiple copies of this program on one machine
     # (not strictly needed)
     socket_obj.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
     # Bind it to the port
     socket_obj.bind(('', port))
-    
+
     # Look up multicast group address in name server
     # (doesn't hurt if it is already in ddd.ddd.ddd.ddd format)
     group = socket.gethostbyname(group)
-    
+
     # Construct binary group address
     bytes = map(int, group.split('.'))
     grpaddr = 0
@@ -118,7 +118,7 @@ def openmcastsock(group, port):
     # Construct struct mreq from grpaddr and ifaddr
     ifaddr = socket.INADDR_ANY
     mreq = struct.pack('LL', socket.htonl(grpaddr), socket.htonl(ifaddr))
-    
+
     # Add group membership
     socket_obj.setsockopt(socket.IPPROTO_IP,
                           socket.IP_ADD_MEMBERSHIP,

@@ -1,7 +1,7 @@
 """This module contains code for generating common musical scales
 for use with MIDI."""
 
-from pystepseq.lib.midi_functions import see_saw, bounce
+from pystepseq.lib.midi_functions import see_saw
 
 # gaps between neighboring ascending notes, '0' is an assumed starting point.
 chromatic = [1]

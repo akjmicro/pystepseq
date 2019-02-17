@@ -1,8 +1,5 @@
 #!/usr/bin/python3
 
-import string
-import os
-import time
 from operator import xor
 
 
@@ -24,7 +21,7 @@ def send_midi(input_tuple):
     _port.write(bytes(
         '%c%c%c' % (input_tuple[0], input_tuple[1], input_tuple[2]),
         'latin-1'
-        )    
+        )
     )
     _port.flush()
 
@@ -85,7 +82,7 @@ MIDI SYSEX message to the open device"""
 
 
 def close_port():
-    port.close()
+    _port.close()
 
 # standard midi file functions:
 
@@ -119,10 +116,6 @@ def write_var_length(var):
     with high bit of each byte set as a flag to indicate to the reader that
     the value that follows in the following byte is to be consumed as well.
     '''
-
-    from sys import stdout
-    from string import join
-
     # Result goes into an array. Since we are starting with the least
     # significant byte, we will eventually have to reverse this to correctly
     # order the output character bytes:
@@ -148,7 +141,7 @@ def write_var_length(var):
     hex_string_array = []
     for n in result_array:
         hex_string_array.append(chr(n))
-    return join(hex_string_array, '')
+    return ''.join(hex_string_array)
 
 # range protection functions:
 

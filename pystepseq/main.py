@@ -21,13 +21,14 @@
 #       MA 02110-1301, USA.
 
 import pickle
-from readline import *
+from readline import *  # pylama: ignore
 
 # my modules:
-from .constants import *
+from .constants import *  # pylama: ignore
 from .help import help
 from .pystepseq import Pystepseq
 from .tempotrigger import Tempotrigger
+from pystepseq.lib.pink_noise import sspn_linear_custom
 from pystepseq.lib.scales import *
 
 # a dict which hosts object instances so we can manipulate
@@ -87,7 +88,6 @@ def save_song(filename):
 def load_song(filename):
     infile = open(filename, 'rb')
     active_instances = pickle.load(infile)
-    import pdb; pdb.set_trace()
     for k in active_instances:
         exec("%s = active_instances['%s']" % (k, k)) in globals()
         active_instances[k].init_midi_port()
@@ -131,10 +131,10 @@ def command_parser(phrase):
             change([i.strip() for i in comm[1:].split(',')])
         elif comm[0:2] == 'tt':
             if len(comm) == 2:
-                print(t.num_triggers_per_qn)
+                print(trig.num_triggers_per_qn)
             else:
                 try:
-                    t.set_num_triggers(int(comm[2:]))
+                    trig.set_num_triggers(int(comm[2:]))
                 except ValueError:
                     print('could not parse the number of triggers')
         elif comm[0] == 't':
@@ -268,7 +268,7 @@ def command_parser(phrase):
                 print(active_instances[comm[0]].triggers_per_beat)
             else:
                 active_instances[comm[0]].triggers_per_beat = int(comm[3:])
-        # beats per measure 
+        # beats per measure
         elif comm[1] == 'b':
             if len(comm) == 2:
                 print(active_instances[comm[0]].beats_per_measure)
@@ -383,9 +383,8 @@ def repl():
         try:
             phrase = input('pystepseq(\'h\' for help)--> ')
             if len(phrase) == 0:
-                pass
-            else:
-                command_parser(phrase)
+                continue
+            command_parser(phrase)
         except (TypeError, KeyError, ValueError, IndexError,
                 NameError) as e:
             print('Error due to malformed input: %s Please try again.' % e)

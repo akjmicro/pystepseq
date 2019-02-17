@@ -44,7 +44,7 @@ af12,[1,5,6,7,3],3   # fractal noise, takes 3 params:
 an[x^17 - 34 for x in range(32)] # evaluate math to populate an list
                                  # must end up being integers....
 ae12     # loop back the cycle after the 12th note.
-################################## 
+##################################
 # riff and song save and recall: #
 ##################################
 q4   # save what's going on to slot 4
