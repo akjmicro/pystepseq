@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pystepseq",
-    version="2018.1209a1",
+    version="2019.0217a1",
     description=('A multi-featured commandline interface MIDI step sequencer'),
     author='Aaron Krister Johnson',
     author_email='akjmicro@gmail.com',
