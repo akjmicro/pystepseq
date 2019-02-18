@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 from setuptools import setup, find_packages
-from os import path
 
 setup(
     name="pystepseq",
@@ -19,5 +18,5 @@ setup(
         'console_scripts': [
             'pystepseq=pystepseq.main:repl',
         ],
-    }    
+    }
 )

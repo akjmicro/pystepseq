@@ -3,7 +3,7 @@ def help():
 
 =t   # create a tempotrigger thread
 t/   # run a tempotrigger thread
-t\   # stop a temportrigger thread (immediately with 't\\\\')
+t\\   # stop a tempotrigger thread (immediately with 't\\\\')
 tt48 # change the default number of ticks per beat to 48 (default 24)
      # can be any number
 t114   # set tempo to Q=114
@@ -11,15 +11,15 @@ t114   # set tempo to Q=114
 =a4  # adds a new voice called 'a', but on MIDI channel 4 (0-15)
 -a   # stops and deletes 'a'
 zxdrums  # sets up two drum voices, 'z' for bass drum and 'x' for everything
-         # else percussive. Must coordinate these against MIDI drum instruments,
-         # e.g. Hydrogen or some program triggering drum sounds at a given
-         # MIDI channel
+         # else percussive. Must coordinate these against MIDI drum
+         # instruments, e.g. Hydrogen or some program triggering drum sounds
+         # at a given MIDI channel
 ##########################################################################
 # The following examples assuming you are targeting a voice called 'a'   #
 # if you are NOT, and it's 'b' (or something else), you'd make the first #
 # charcter 'b', e.g. 'bm48' (from the example below listed as 'am48')    #
 ##########################################################################
-a\     # silence 'a' (immediate with 'a\\\\')
+a\\     # silence 'a' (immediate with 'a\\\\')
 a/     # bring in a (immediate with 'a//')
 z/     # if you've established a bass drum voice, bring it in
 x/     # if you've established an 'everything else percussion voice', bring

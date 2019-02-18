@@ -3,7 +3,7 @@
 #
 #       pystepseq.py
 #
-#       Copyright 2013-2018 Aaron Krister Johnson <akjmicro@gmail.com>
+#       Copyright 2013-2019 Aaron Krister Johnson <akjmicro@gmail.com>
 #
 #       This program is free software; you can redistribute it and/or modify
 #       it under the terms of the GNU General Public License as published by
@@ -28,9 +28,11 @@ from math import ceil, log
 from random import randint, choice
 
 # my modules:
-from pystepseq.lib.midi_functions import *
-from pystepseq.lib.scales import *
-from pystepseq.lib.pink_noise import *
+from pystepseq.lib.midi_functions import (
+    close_port, note_off, note_on, open_port
+)
+from pystepseq.lib.scales import *  # noqa
+from pystepseq.lib.pink_noise import pink_noise
 
 
 class Pystepseq:
@@ -47,7 +49,7 @@ class Pystepseq:
         self.beats_per_measure = 4  # total number of beats in a measure
         self.triggers_per_measure = (self.triggers_per_beat *
                                      self.beats_per_measure)
-        self.scl = MidiScale(modal)
+        self.scl = MidiScale(modal)  # noqa
         self.runstate = 0
         self.len_list = []
         self.vol_list = []
@@ -127,7 +129,7 @@ class Pystepseq:
         if start == 0 and finish == 1:
             start = 1
             finish = 2
-        for blah in range(start, finish):
+        for blah in range(start, finish + 1):
             offset = randint(-var, var)
             current = self.note_list[blah - 1]
             new = (current + offset)
@@ -144,16 +146,6 @@ class Pystepseq:
                 self.note_list[blah] = new
             except IndexError:
                 self.note_list.append(new)
-        for gah in range(0, 1):  # for repeat:
-            if (chance_repeat >= randint(1, 100)):  # for repeat
-                if (chance_tie >= randint(1, 100)):  # for tie
-                    new = -1
-                else:
-                    new = self.note_list[(blah - 1) % self.end]
-                try:
-                    self.note_list[blah] = randnum
-                except IndexError:
-                    self.note_list.append(randnum)
 
     def _note_pink(self, start, finish=None):
         """create pink noise shaped note contour"""
@@ -213,7 +205,10 @@ class Pystepseq:
         for blah in range(start, finish):
             offset = randint(-var, var)
             current = self.vol_list[blah - 1]
-            new = (current + offset)
+            if (chance >= randint(1, 100)):
+                new = 0
+            else:
+                new = (current + offset)
             if (new > 127):
                 new = (current - offset)
             if (new < 0):
@@ -222,9 +217,6 @@ class Pystepseq:
                 self.vol_list[blah] = new
             except IndexError:
                 self.vol_list.append(blah)
-        for gah in range(start, finish):  # for space:
-            if (chance >= randint(1, 100)):
-                self.vol_list[gah] = 0
 
     def _vol_pink(self, start, finish=None):
         """create pink noise shaped volume contour"""
@@ -254,7 +246,7 @@ class Pystepseq:
             choice_list = [6, 6, 6, 6, 6, 6, 6, 6, 12, 12, 12, 18, 18, 24]
         outarr = []
         total = 0
-        
+
         # re-calc the measure length:
         self.triggers_per_measure = (self.triggers_per_beat *
                                      self.beats_per_measure)
@@ -318,7 +310,6 @@ class Pystepseq:
 
     def looper(self):
         """The looper is the heart of the sequencer"""
-        
         trigger = 0
         self.trigger_count = 0
         self.step = -1
@@ -346,10 +337,10 @@ class Pystepseq:
                 self.gate = self.gate_list[self.step % len(self.gate_list)]
                 self.gate_cutoff = int(round(self.note_length *
                                              (self.gate / 100)))
-                self.note_index = self.note_list[self.step %
-                                                  len(self.note_list)]
-                ### protect against < 0 ###
-                if self.note_length < 1:  #
+                self.note_index = self.note_list[
+                    self.step % len(self.note_list)]
+                # protect against < 0
+                if self.note_length < 1:
                     self.note_length = 1
                 note_off(int(self.chn), int(self.old_note))
                 self.note = self.scl.get_note(self.note_index)
@@ -364,9 +355,6 @@ class Pystepseq:
         # upon receiving a kill signal:
         note_off(self.chn, self.old_note)
         self.step = -1
-        # when loop ends, we destroy ourselves
-        # (this looper thread, not the 'Pystepseq' object itself)
-        # exit()
 
     def play(self, immediately=False):
         if self.runstate == 0:

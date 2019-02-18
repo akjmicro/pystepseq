@@ -21,15 +21,14 @@
 #       MA 02110-1301, USA.
 
 import pickle
-from readline import *  # pylama: ignore
+from readline import *  # noqa
 
 # my modules:
-from .constants import *  # pylama: ignore
 from .help import help
 from .pystepseq import Pystepseq
 from .tempotrigger import Tempotrigger
 from pystepseq.lib.pink_noise import sspn_linear_custom
-from pystepseq.lib.scales import *
+from pystepseq.lib.scales import *  # noqa
 
 # a dict which hosts object instances so we can manipulate
 # multiple parameters of multiple instances simultaneously
@@ -94,7 +93,7 @@ def load_song(filename):
     print("loaded song %s" % filename)
 
 
-def command_parser(phrase):
+def command_parser(phrase):  # noqa
     all_commands = phrase.rstrip().split(';')
     for comm in all_commands:
         if comm[0] == 'h':
