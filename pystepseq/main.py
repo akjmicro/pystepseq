@@ -65,6 +65,8 @@ def change(instances, notes=1, vols=1, lengths=1):
             active_instances[i].randomize_volumes()
         if lengths:
             active_instances[i].randomize_lengths()
+        if gates:
+            active_instances[i].randomize_gates()
 
 
 def slot_queue_save(slot):

@@ -35,9 +35,12 @@ arn      # randomize notes
 annbrown # a's note noise type (brown, white, pink)
 and5     # a's random note depth is now 5
 arv      # randomize volumes
+arg      # randomize gates (% of rhythm length that holds, for articulation)
 ap30     # on next 'rv' call, 30% of notes are rests
 avnpink  # a's volume noise type (brown, white, pink)
 avd16    # a's random volumn depth is now 16
+abb48    # reset the number of trigger events that represent a 'beat'
+ab5      # change the number of beats in a 'measure'
 arl[6,6,12,24]       # randomize lengths, choosing from the attached list
 af12,[1,5,6,7,3],3   # fractal noise, takes 3 params:
                      # length of result, initial seed list, num. of layers
