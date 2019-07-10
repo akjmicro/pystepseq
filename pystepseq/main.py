@@ -54,7 +54,7 @@ def setup_drums():
     x.randomize_drums()
 
 
-def change(instances, notes=1, vols=1, lengths=1):
+def change(instances, notes=1, vols=1, lengths=1, gates=1):
     """section(instances, notes=1, vols=1, lengths=1)
     allows for the simultaneous changing of all pystepseq objects parameters
     """
