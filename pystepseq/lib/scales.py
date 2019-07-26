@@ -1,6 +1,8 @@
 """This module contains code for generating common musical scales
 for use with MIDI."""
 
+from math import log2
+
 from pystepseq.lib.midi_functions import see_saw
 
 # gaps between neighboring ascending notes, '0' is an assumed starting point.
@@ -48,11 +50,28 @@ def note_and_bend(mycents, middle_c=True):
     return note, bend
 
 
+def cents(x):
+    return log2(x) * 1200.00
+
+
 edo5 = [note_and_bend(x / 5. * 1200.0) for x in range(-15, 20)]
+harm = [
+    note_and_bend(x)
+    for x in [
+        cents(y)
+        for y in [
+            1/4., 1/3., 3/8.,
+            1/2., 2/3., 3/4.,
+            1, 5/4., 3/2., 7/4.,
+            2, 9/4., 5/2., 11/4., 3,
+            13/4., 14/4., 15/4., 16.
+        ]
+    ]
+]
 
 perc_scales = [perc, tabla, GMKit, TR808, HardElectro]
 
-microtonal_scales = [edo5]
+microtonal_scales = [edo5, harm]
 
 
 def create_scale(vectors, min=0, max=127):
