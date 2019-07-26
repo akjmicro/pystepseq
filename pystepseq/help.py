@@ -6,7 +6,7 @@ t/   # run a tempotrigger thread
 t\\   # stop a tempotrigger thread (immediately with 't\\\\')
 tt48 # change the default number of ticks per beat to 48 (default 24)
      # can be any number
-t114   # set tempo to Q=114
+t114   # set tempo to QN=114
 =a   # adds a new voice, 'a'
 =a4  # adds a new voice called 'a', but on MIDI channel 4 (0-15)
 -a   # stops and deletes 'a'
@@ -40,10 +40,14 @@ ap30     # on next 'rv' call, 30% of notes are rests
 avnpink  # a's volume noise type (brown, white, pink)
 avd16    # a's random volumn depth is now 16
 abb48    # reset the number of trigger events that represent a 'beat'
-ab5      # change the number of beats in a 'measure'
+         # this example now executes changing the 'atomic unit' to 1/48th of a 'quarter note'
+         # (assuming we call our beat a 'quarter note')
+ab5      # change the number of beats in a 'measure' e.g. 5 quarter notes
 arl[6,6,12,24]       # randomize lengths, choosing from the attached list
-af12,[1,5,6,7,3],3   # fractal noise, takes 3 params:
-                     # length of result, initial seed list, num. of layers
+                     # in this example, if there are 24 pulses in a 'quarter note', we have
+                     # two 16th notes, an 8th note, and a quarter note.
+af[1,5,6,7,3],3,12,0  # fractal noise, takes 3 params:
+                      # initial seed list, # layers, length of result, transposition
 an[x^17 - 34 for x in range(32)] # evaluate math to populate an list
                                  # must end up being integers....
 ae12     # loop back the cycle after the 12th note.

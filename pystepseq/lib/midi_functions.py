@@ -2,7 +2,6 @@
 
 from operator import xor
 
-
 _port = None
 
 
@@ -18,11 +17,9 @@ def open_port(dummy_arg):
 # only for Linux, to make the Mac-style simplecoremidi API work:
 def send_midi(input_tuple):
     global _port
-    _port.write(bytes(
-        '%c%c%c' % (input_tuple[0], input_tuple[1], input_tuple[2]),
-        'latin-1'
-        )
-    )
+    _port.write(
+        bytes('%c%c%c' % (input_tuple[0], input_tuple[1], input_tuple[2]),
+              'latin-1'))
     _port.flush()
 
 
@@ -84,6 +81,7 @@ MIDI SYSEX message to the open device"""
 def close_port():
     _port.close()
 
+
 # standard midi file functions:
 
 
@@ -143,6 +141,7 @@ def write_var_length(var):
         hex_string_array.append(chr(n))
     return ''.join(hex_string_array)
 
+
 # range protection functions:
 
 
@@ -159,6 +158,7 @@ def see_saw(index, max):
     if f >= max:
         return max - (index % max)
     return f
+
 
 # t2mf functions
 
@@ -216,5 +216,6 @@ def midi_text_controller(time, channel, parameter, value):
     global text_file
     text_file.write("%i Par ch=%i c=%i v=%i\n" %
                     (time, channel + 1, parameter, value))
+
 
 # END

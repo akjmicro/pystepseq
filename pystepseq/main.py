@@ -27,7 +27,7 @@ from readline import *  # noqa
 from .help import help
 from .pystepseq import Pystepseq
 from .tempotrigger import Tempotrigger
-from pystepseq.lib.pink_noise import sspn_linear_custom
+from pystepseq.lib.pink_noise import fractal_melody
 from pystepseq.lib.scales import *  # noqa
 
 # a dict which hosts object instances so we can manipulate
@@ -329,7 +329,7 @@ def command_parser(phrase):  # noqa
         # fractal note list
         elif comm[1] == 'f':
             myargs = eval(comm[2:])
-            active_instances[comm[0]].note_list = sspn_linear_custom(*myargs)
+            active_instances[comm[0]].note_list = fractal_melody(*myargs)
         # notes
         elif comm[1] == 'n':
             if len(comm) == 2:

@@ -28,9 +28,8 @@ from math import ceil, log
 from random import randint, choice
 
 # my modules:
-from pystepseq.lib.midi_functions import (
-    close_port, note_off, note_on, open_port
-)
+from pystepseq.lib.midi_functions import (close_port, note_off, note_on,
+                                          open_port, pitch_bend)
 from pystepseq.lib.scales import *  # noqa
 from pystepseq.lib.pink_noise import pink_noise
 
@@ -44,7 +43,7 @@ class Pystepseq:
         from .tempotrigger import openmcastsock
         self.chn = chn
         self.step = -1
-        self.end = 16    # num of note events, distinguished from beats
+        self.end = 16  # num of note events, distinguished from beats
         self.triggers_per_beat = 24
         self.beats_per_measure = 4  # total number of beats in a measure
         self.triggers_per_measure = (self.triggers_per_beat *
@@ -78,8 +77,7 @@ class Pystepseq:
 
     def pickle_slot_save(self, num):
         slot_dict = {}
-        for att in ['chn', 'end', 'scl',
-                    'note_list', 'vol_list', 'len_list']:
+        for att in ['chn', 'end', 'scl', 'note_list', 'vol_list', 'len_list']:
             slot_dict[att] = pickle.dumps(getattr(self, att))
         self._pickle_slots[num] = slot_dict
 
@@ -317,6 +315,7 @@ class Pystepseq:
         self.note_autocounter = 0
         self.vol_autocounter = 0
         self.old_note = 60  # dummy
+        self.bend = 8192
         self.sounding = 0
         self.note_length = 24  # init dummy
         while (self.runstate == 1) or (self.cycle_idx != 0):
@@ -335,16 +334,25 @@ class Pystepseq:
                                                      len(self.len_list)])
                 self.vol = self.vol_list[self.step % len(self.vol_list)]
                 self.gate = self.gate_list[self.step % len(self.gate_list)]
-                self.gate_cutoff = int(round(self.note_length *
-                                             (self.gate / 100)))
-                self.note_index = self.note_list[
-                    self.step % len(self.note_list)]
+                self.gate_cutoff = int(
+                    round(self.note_length * (self.gate / 100)))
+                self.note_index = self.note_list[self.step %
+                                                 len(self.note_list)]
                 # protect against < 0
                 if self.note_length < 1:
                     self.note_length = 1
                 note_off(int(self.chn), int(self.old_note))
                 self.note = self.scl.get_note(self.note_index)
-                note_on(int(self.chn), int(self.note), int(self.vol))
+                if isinstance(self.note, tuple):
+                    self.note, self.bend = self.note[0], self.note[1]
+                    if self.vol > 0:
+                        pitch_bend(int(self.chn), int(self.bend))
+                    note_on(int(self.chn), int(self.note), int(self.vol))
+                else:
+                    if self.bend != 8192:
+                        pitch_bend(int(self.chn), int(self.bend))
+                        self.bend = 8192
+                    note_on(int(self.chn), int(self.note), int(self.vol))
                 self.old_note = self.note
             # turn note off if the gate value indicates:
             elif self.trigger_count == self.gate_cutoff:
