@@ -1,5 +1,7 @@
 ## pystepseq
 
+A commandline musical step-sequencer with some advanced features.
+
 ### TO INSTALL:
 ____________
 
