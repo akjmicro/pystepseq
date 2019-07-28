@@ -386,7 +386,7 @@ def repl():
             if len(phrase) == 0:
                 continue
             command_parser(phrase)
-        except (TypeError, KeyError, ValueError, IndexError,
+        except (TypeError, KeyError, ValueError, IndexError, SyntaxError,
                 NameError) as e:
             print('Error due to malformed input: %s Please try again.' % e)
         except (EOFError, KeyboardInterrupt):

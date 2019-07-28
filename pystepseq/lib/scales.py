@@ -36,16 +36,13 @@ HardElectro = list(range(36, 52, 1))
 # microtonal scales: #
 ######################
 # helper function
-def note_and_bend(mycents, middle_c=True):
+def note_and_bend(mycents, middle_note=60):
     """Take a cent value and return a MIDI note and bend.
 
     Scale to '0 cents = middle-C' if middle_c=True.
     """
     note, remain = divmod(mycents + 50, 100.0)
-    if middle_c:
-        note = int(note + 60)  # 0 = "MIDI middle-C"
-    else:
-        note = int(note)
+    note = int(note + middle_note)
     bend = 8192 + int(round((remain - 50) * 40.96))
     return note, bend
 
@@ -55,23 +52,56 @@ def cents(x):
 
 
 edo5 = [note_and_bend(x / 5. * 1200.0) for x in range(-15, 20)]
-harm = [
-    note_and_bend(x)
-    for x in [
-        cents(y)
-        for y in [
-            1/4., 1/3., 3/8.,
-            1/2., 2/3., 3/4.,
-            1, 5/4., 3/2., 7/4.,
-            2, 9/4., 5/2., 11/4., 3,
-            13/4., 14/4., 15/4., 16.
+
+
+def make_otonal_scale(middle_note):
+    """Return a otonal (harmonic) scale tuned to a given 12edo pitch."""
+    return [
+        note_and_bend(x, middle_note)
+        for x in [
+            cents(y)
+            for y in [
+                1/4., 1/3., 3/8.,
+                1/2., 2/3., 3/4.,
+                1, 5/4., 3/2., 7/4.,
+                2, 9/4., 5/2., 11/4.,
+                3, 13/4., 14/4., 15/4.,
+                4.0
+            ]
         ]
     ]
-]
 
+
+def make_utonal_scale(middle_note):
+    """Return a utonal (subharmonic) scale tuned to a given 12edo pitch."""
+    return [
+        note_and_bend(x, middle_note)
+        for x in [
+            cents(y)
+            for y in [
+                1/4., 1/3., 3/8.,
+                1/2., 2/3., 3/4.,
+                1, 6/5., 3/2., 12/7.,
+                2, 24/11., 12/5., 8/3.,
+                3, 16/5., 24/7., 24/13.,
+                4.0
+            ]
+        ]
+    ]
+
+
+# a place to keep our microtonal scales:
+microtonal_scales = [edo5]
+# make a set of harmonic and subharmonic scales:
+for center in range(60, 73):
+    exec(f'otonal{center} = make_otonal_scale({center})')
+    exec(f'microtonal_scales.append(otonal{center})')
+    exec(f'utonal{center} = make_utonal_scale({center})')
+    exec(f'microtonal_scales.append(utonal{center})')
+
+
+# our percussion scales:
 perc_scales = [perc, tabla, GMKit, TR808, HardElectro]
-
-microtonal_scales = [edo5, harm]
 
 
 def create_scale(vectors, min=0, max=127):
