@@ -28,8 +28,13 @@ from math import ceil, log
 from random import randint, choice
 
 # my modules:
-from pystepseq.lib.midi_functions import (close_port, note_off, note_on,
-                                          open_port, pitch_bend)
+from pystepseq.lib.midi_functions import (
+    close_port,
+    note_off,
+    note_on,
+    open_port,
+    pitch_bend,
+)
 from pystepseq.lib.scales import *  # noqa
 from pystepseq.lib.pink_noise import pink_noise
 
@@ -38,30 +43,31 @@ class Pystepseq:
     """The Pystepseq object defines a MIDI voice that will be triggered
     to sound by a multicast network Tempotrigger object.
     """
+
     def __init__(self, chn=0):
         from . import constants
         from .tempotrigger import openmcastsock
+
         self.chn = chn
         self.step = -1
         self.end = 16  # num of note events, distinguished from beats
         self.triggers_per_beat = 24
         self.beats_per_measure = 4  # total number of beats in a measure
-        self.triggers_per_measure = (self.triggers_per_beat *
-                                     self.beats_per_measure)
+        self.triggers_per_measure = self.triggers_per_beat * self.beats_per_measure
         self.scl = MidiScale(modal)  # noqa
         self.runstate = 0
         self.len_list = []
         self.vol_list = []
         self.gate_list = []
         self.note_list = []
-        self.note_noise = 'white'  # can be brown or pink, too
+        self.note_noise = "white"  # can be brown or pink, too
         self.note_depth = 5
         self.note_repeat = 0
         self.note_tie = 0
-        self.vol_noise = 'white'
+        self.vol_noise = "white"
         self.vol_depth = 20
         self.sp = 0
-        self.MYGROUP = '225.0.0.250'
+        self.MYGROUP = "225.0.0.250"
         self.MYPORT = constants.DEFAULT_MULTICAST_PORT
         self.receiver = openmcastsock(self.MYGROUP, self.MYPORT)
         self.open_port_exists = False
@@ -77,7 +83,7 @@ class Pystepseq:
 
     def pickle_slot_save(self, num):
         slot_dict = {}
-        for att in ['chn', 'end', 'scl', 'note_list', 'vol_list', 'len_list']:
+        for att in ["chn", "end", "scl", "note_list", "vol_list", "len_list"]:
             slot_dict[att] = pickle.dumps(getattr(self, att))
         self._pickle_slots[num] = slot_dict
 
@@ -103,12 +109,12 @@ class Pystepseq:
         scale_midpoint = self.scl.size // 2
         for blah in range(start, finish):
             randnum = scale_midpoint + randint(-var, var)
-            if (randnum > self.scl.size):
+            if randnum > self.scl.size:
                 randnum = self.scl.size - (randnum - self.scl.size)
-            if (randnum < 0):
+            if randnum < 0:
                 randnum = abs(randnum)
-            if (chance_repeat >= randint(1, 100)):  # for repeat
-                if (chance_tie >= randint(1, 100)):  # for space
+            if chance_repeat >= randint(1, 100):  # for repeat
+                if chance_tie >= randint(1, 100):  # for space
                     randnum = -1
                 else:
                     randnum = self.note_list[(blah - 1) % self.end]
@@ -130,13 +136,13 @@ class Pystepseq:
         for blah in range(start, finish + 1):
             offset = randint(-var, var)
             current = self.note_list[blah - 1]
-            new = (current + offset)
-            if (new > self.scl.size):
-                new = (current - offset)
-            if (new < 0):
+            new = current + offset
+            if new > self.scl.size:
+                new = current - offset
+            if new < 0:
                 new = abs(new)
-            if (chance_repeat >= randint(1, 100)):  # for repeat
-                if (chance_tie >= randint(1, 100)):  # for tie
+            if chance_repeat >= randint(1, 100):  # for repeat
+                if chance_tie >= randint(1, 100):  # for tie
                     new = -1
                 else:
                     new = self.note_list[(blah - 1) % self.end]
@@ -158,12 +164,12 @@ class Pystepseq:
         offset = -1 * (max(result_list) // 2)
         for blah in range(start, finish):
             randnum = scale_midpoint + (result_list[blah - 1] + offset)
-            if (randnum > self.scl.size):
+            if randnum > self.scl.size:
                 randnum = self.scl.size - (randnum - self.scl.size)
-            if (randnum < 0):
+            if randnum < 0:
                 randnum = abs(randnum)
-            if (chance_repeat >= randint(1, 100)):  # for repeat
-                if (chance_tie >= randint(1, 100)):  # for tie
+            if chance_repeat >= randint(1, 100):  # for repeat
+                if chance_tie >= randint(1, 100):  # for tie
                     randnum = -1
                 else:
                     randnum = self.note_list[(blah - 1) % self.end]
@@ -180,11 +186,11 @@ class Pystepseq:
         chance = self.sp
         for blah in range(start, finish):
             randnum = 64 + randint(-var, var)  # 64 is half of 127
-            if (randnum > 127):
+            if randnum > 127:
                 randnum = 127 - (randnum - 127)
-            if (randnum < 0):
+            if randnum < 0:
                 randnum = abs(randnum)
-            if (chance >= randint(1, 100)):  # for space
+            if chance >= randint(1, 100):  # for space
                 randnum = 0
             try:
                 self.vol_list[blah] = randnum
@@ -203,14 +209,14 @@ class Pystepseq:
         for blah in range(start, finish):
             offset = randint(-var, var)
             current = self.vol_list[blah - 1]
-            if (chance >= randint(1, 100)):
+            if chance >= randint(1, 100):
                 new = 0
             else:
-                new = (current + offset)
-            if (new > 127):
-                new = (current - offset)
-            if (new < 0):
-                new = (current - offset)
+                new = current + offset
+            if new > 127:
+                new = current - offset
+            if new < 0:
+                new = current - offset
             try:
                 self.vol_list[blah] = new
             except IndexError:
@@ -226,11 +232,11 @@ class Pystepseq:
         offset = -1 * (max(result_list) // 2)
         for blah in range(start, finish):
             randnum = 64 + (result_list[blah - 1] + offset)
-            if (randnum > 127):
+            if randnum > 127:
                 randnum = 127 - (randnum - 127)
-            if (randnum < 0):
+            if randnum < 0:
                 randnum = abs(randnum)
-            if (chance >= randint(1, 100)):  # for space
+            if chance >= randint(1, 100):  # for space
                 randnum = 0
             try:
                 self.vol_list[blah] = randnum
@@ -246,8 +252,7 @@ class Pystepseq:
         total = 0
 
         # re-calc the measure length:
-        self.triggers_per_measure = (self.triggers_per_beat *
-                                     self.beats_per_measure)
+        self.triggers_per_measure = self.triggers_per_beat * self.beats_per_measure
 
         # do this while we are below the beat count:
         while total < self.triggers_per_measure:
@@ -275,18 +280,18 @@ class Pystepseq:
     def randomize_volumes(self, choice_list=None):
         """randomize volumes"""
         if choice_list is None:
-            start = 1 if self.vol_noise == 'brown' else 0
+            start = 1 if self.vol_noise == "brown" else 0
             finish = len(self.len_list)
-            getattr(self, '_vol_%s' % self.vol_noise)(start, finish)
+            getattr(self, "_vol_%s" % self.vol_noise)(start, finish)
         else:
             self.vol_list = [choice(choice_list) for i in self.len_list]
 
     def randomize_notes(self, choice_list=None):
         """randomize notes"""
         if choice_list is None:
-            start = 1 if self.note_noise == 'brown' else 0
+            start = 1 if self.note_noise == "brown" else 0
             finish = len(self.len_list)
-            getattr(self, '_note_%s' % self.note_noise)(start, finish)
+            getattr(self, "_note_%s" % self.note_noise)(start, finish)
         else:
             self.note_list = [choice(choice_list) for i in self.len_list]
 
@@ -320,24 +325,20 @@ class Pystepseq:
         self.note_length = 24  # init dummy
         while (self.runstate == 1) or (self.cycle_idx != 0):
             trigger = self.receiver.recv(9)
-            triggernum, cyclen = trigger.split(b'|')
+            triggernum, cyclen = trigger.split(b"|")
             # proceed if it's the first of a note length, and we're running
-            if (self.trigger_count == 0):
+            if self.trigger_count == 0:
                 self.step = (self.step + 1) % self.end
                 # do we have to change slots?
-                if (self.current_slot != self.old_slot) and \
-                        (self.step == 0):
+                if (self.current_slot != self.old_slot) and (self.step == 0):
                     self.pickle_slot_recall(self.current_slot)
                     self.old_slot = self.current_slot
                 #####
-                self.note_length = int(self.len_list[self.step %
-                                                     len(self.len_list)])
+                self.note_length = int(self.len_list[self.step % len(self.len_list)])
                 self.vol = self.vol_list[self.step % len(self.vol_list)]
                 self.gate = self.gate_list[self.step % len(self.gate_list)]
-                self.gate_cutoff = int(
-                    round(self.note_length * (self.gate / 100)))
-                self.note_index = self.note_list[self.step %
-                                                 len(self.note_list)]
+                self.gate_cutoff = int(round(self.note_length * (self.gate / 100)))
+                self.note_index = self.note_list[self.step % len(self.note_list)]
                 # protect against < 0
                 if self.note_length < 1:
                     self.note_length = 1
@@ -370,7 +371,7 @@ class Pystepseq:
             if not immediately:
                 while True:
                     packet = self.receiver.recv(9)
-                    num, cyclen = packet.split(b'|')
+                    num, cyclen = packet.split(b"|")
                     if int(num) == int(cyclen) - 1:
                         break
             _thread.start_new_thread(self.looper, ())

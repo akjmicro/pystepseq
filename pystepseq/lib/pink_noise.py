@@ -15,9 +15,9 @@ def pink_noise(number_of_dice, size_of_die):
     for x in range(number_of_dice):
         dice.append(randint(1, size_of_die))
     array.append(sum(dice))
-    for sample in range(1, 2**number_of_dice):
+    for sample in range(1, 2 ** number_of_dice):
         for x in range(number_of_dice):
-            if sample % (2**x) == 0:
+            if sample % (2 ** x) == 0:
                 dice[x] = randint(1, size_of_die)
         array.append(sum(dice))
     # scale between 0 and array_max:

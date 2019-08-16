@@ -40,13 +40,11 @@ class Tempotrigger:
         self.sleep_time = 60.0 / (self.tempo * self.num_triggers_per_qn)
         # mcast sender stuff (for sending sync timestamps):
         self.MYPORT = constants.DEFAULT_MULTICAST_PORT
-        self.MYGROUP = '225.0.0.250'
+        self.MYGROUP = "225.0.0.250"
         self.sender = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.mygroup = self.MYGROUP
-        self.ttl = struct.pack('b', 1)  # Time-to-live
-        self.sender.setsockopt(socket.IPPROTO_IP,
-                               socket.IP_MULTICAST_TTL,
-                               self.ttl)
+        self.ttl = struct.pack("b", 1)  # Time-to-live
+        self.sender.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.ttl)
 
     def set_num_triggers(self, numtriggers):
         self.num_triggers_per_qn = numtriggers
@@ -66,12 +64,13 @@ class Tempotrigger:
             self.target = time.time() + self.sleep_time
             self.cycle_idx = (self.cycle_idx + 1) % self.cycle_len
             self.sender.sendto(
-                bytes(''.join(
-                    [repr(self.cycle_idx).zfill(4), '|', repr(self.cycle_len)]
+                bytes(
+                    "".join(
+                        [repr(self.cycle_idx).zfill(4), "|", repr(self.cycle_len)]
                     ).zfill(4),
-                    'ascii'
+                    "ascii",
                 ),
-                (self.mygroup, self.MYPORT)
+                (self.mygroup, self.MYPORT),
             )
             time.sleep(self.sleep_time - 0.006)
             # accuracy tweak loop:
@@ -103,25 +102,23 @@ def openmcastsock(group, port):
     socket_obj.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
     # Bind it to the port
-    socket_obj.bind(('', port))
+    socket_obj.bind(("", port))
 
     # Look up multicast group address in name server
     # (doesn't hurt if it is already in ddd.ddd.ddd.ddd format)
     group = socket.gethostbyname(group)
 
     # Construct binary group address
-    bytes = map(int, group.split('.'))
+    bytes = map(int, group.split("."))
     grpaddr = 0
     for byte in bytes:
         grpaddr = (grpaddr << 8) | byte
 
     # Construct struct mreq from grpaddr and ifaddr
     ifaddr = socket.INADDR_ANY
-    mreq = struct.pack('LL', socket.htonl(grpaddr), socket.htonl(ifaddr))
+    mreq = struct.pack("LL", socket.htonl(grpaddr), socket.htonl(ifaddr))
 
     # Add group membership
-    socket_obj.setsockopt(socket.IPPROTO_IP,
-                          socket.IP_ADD_MEMBERSHIP,
-                          mreq)
+    socket_obj.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
     return socket_obj

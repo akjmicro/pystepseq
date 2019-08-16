@@ -1,5 +1,5 @@
 def help():
-    helpstring = '''commands:
+    helpstring = """commands:
 
 =t   # create a tempotrigger thread
 t/   # run a tempotrigger thread
@@ -58,5 +58,5 @@ q4   # save what's going on to slot 4
 4    # replace what's playing with the contents of slot 4
 load mysong # replace all slots with the contents of the file 'mysong'
 save mysong # save all slots to the file 'mysong'
-'''
+"""
     print(helpstring)

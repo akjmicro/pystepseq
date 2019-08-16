@@ -7,7 +7,7 @@ _port = None
 
 def open_port(dummy_arg):
     global _port
-    _port = open(dummy_arg, 'wb')
+    _port = open(dummy_arg, "wb")
     if _port:
         print("Open successful")
     else:
@@ -18,14 +18,14 @@ def open_port(dummy_arg):
 def send_midi(input_tuple):
     global _port
     _port.write(
-        bytes('%c%c%c' % (input_tuple[0], input_tuple[1], input_tuple[2]),
-              'latin-1'))
+        bytes("%c%c%c" % (input_tuple[0], input_tuple[1], input_tuple[2]), "latin-1")
+    )
     _port.flush()
 
 
 def pitch_bend(channel, bend):
-    low_byte = (bend & 127)
-    high_byte = (bend >> 7)
+    low_byte = bend & 127
+    high_byte = bend >> 7
     send_midi((0xE0 + channel, low_byte, high_byte))
 
 
@@ -74,7 +74,7 @@ MIDI SYSEX message to the open device"""
     data.append(chksum & 0x7F)
     data.append(0xF7)
     for d in data:
-        send_midi('%c' % d)
+        send_midi("%c" % d)
     print(data)
 
 
@@ -86,8 +86,8 @@ def close_port():
 
 
 def read_var_length(fp):
-    ''' take a file pointer that will presumably read characters from the
-    pointed-to file, and return a numeric value. '''
+    """ take a file pointer that will presumably read characters from the
+    pointed-to file, and return a numeric value. """
 
     # set the variable to which we will add:
     output = 0
@@ -97,37 +97,37 @@ def read_var_length(fp):
 
     # its real value is really only the lowest 7 bits, so mask it
     # against 0x7f via logical AND.
-    output = inbyte & 0x7f
+    output = inbyte & 0x7F
 
     # if the highest bit is set, move on to the next bit
     while inbyte & 0x80 == 0x80:
         inbyte = ord(fp.read(1))
         # shift left 7 bits, and add the next masked value to it.
-        output = (output << 7) + (inbyte & 0x7f)
+        output = (output << 7) + (inbyte & 0x7F)
 
     # this output value will be a numeric type:
     return output
 
 
 def write_var_length(var):
-    ''' Take a numerical value, and convert it to a 7-bit packed string
+    """ Take a numerical value, and convert it to a 7-bit packed string
     with high bit of each byte set as a flag to indicate to the reader that
     the value that follows in the following byte is to be consumed as well.
-    '''
+    """
     # Result goes into an array. Since we are starting with the least
     # significant byte, we will eventually have to reverse this to correctly
     # order the output character bytes:
     result_array = []
 
     # We have at least one value, right? :
-    result_array.append(var & 0x7f)
+    result_array.append(var & 0x7F)
     var >>= 7  # shift right
 
     # If 'var' still has any value greater than 0, 'and' it with 0x7f and
     # then 'or' with 0x80, then put it out to result.  Then we shift right
     # for the next iteration:
     while var > 0x0:
-        result_array.append((var & 0x7f) | 0x80)
+        result_array.append((var & 0x7F) | 0x80)
         var >>= 7
 
     # Reverse the array, after all, we *did* put the least significant byte
@@ -139,7 +139,7 @@ def write_var_length(var):
     hex_string_array = []
     for n in result_array:
         hex_string_array.append(chr(n))
-    return ''.join(hex_string_array)
+    return "".join(hex_string_array)
 
 
 # range protection functions:
@@ -165,9 +165,10 @@ def see_saw(index, max):
 
 def midi_text_open(file, midi_file_type, num_channels, resolution):
     global text_file
-    text_file = open(file, 'w')
-    text_file.write("MFile %i %i %i\nMTrk\n" %
-                    (midi_file_type, num_channels, resolution))
+    text_file = open(file, "w")
+    text_file.write(
+        "MFile %i %i %i\nMTrk\n" % (midi_file_type, num_channels, resolution)
+    )
 
 
 def midi_text_close():
@@ -192,8 +193,7 @@ def midi_text_pitch_bend(time, channel, bend):
 
 def midi_text_note_on(time, channel, note, volume):
     global text_file
-    text_file.write("%i On ch=%i n=%i v=%i\n" %
-                    (time, channel + 1, note, volume))
+    text_file.write("%i On ch=%i n=%i v=%i\n" % (time, channel + 1, note, volume))
 
 
 def midi_text_note_off(time, channel, note):
@@ -214,8 +214,7 @@ def midi_text_program_change(time, channel, program):
 
 def midi_text_controller(time, channel, parameter, value):
     global text_file
-    text_file.write("%i Par ch=%i c=%i v=%i\n" %
-                    (time, channel + 1, parameter, value))
+    text_file.write("%i Par ch=%i c=%i v=%i\n" % (time, channel + 1, parameter, value))
 
 
 # END
