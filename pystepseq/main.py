@@ -22,6 +22,7 @@
 
 import pickle
 import re
+from pathlib import Path
 from readline import *  # noqa
 
 # my modules:
@@ -36,10 +37,10 @@ from pystepseq.lib.scales import *  # noqa
 active_instances = {}
 
 
-with open("../setup.py") as setup_file:
+with open(Path(__file__).parent.parent / "setup.py") as setup_file:
     txt = setup_file.read()
     version_found = re.search(r'version="(.*?)"', txt).group(1)
-    PROMPT = f"pystepseq-{version_found} ('h' for help) -->"
+    PROMPT = f"pystepseq-{version_found} ('h' for help) --> "
 
 
 def setup_drums():
