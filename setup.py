@@ -9,7 +9,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="pystepseq",
-    version="1.0.1",
+    version="1.1.1",
     description=("A multi-featured commandline interface MIDI step sequencer"),
     long_description=README,
     long_description_content_type="text/markdown",
@@ -18,7 +18,7 @@ setup(
     url="https://github.com/akjmicro/pystepseq",
     packages=find_packages(),
     package_data={
-        "": ["LICENSE.txt", "README.md", "README.rst", "share/demo_pickles/*"]
+        "": ["LICENSE.txt", "README.md", "share/demo_pickles/*"]
     },
     entry_points={"console_scripts": ["pystepseq=pystepseq.main:repl"]},
 )

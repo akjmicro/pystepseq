@@ -28,7 +28,18 @@ Once downloaded, in the 'pystepseq' directory:
 ___________________________________
 
 * Files will be installed into a Python lib directory on your system. E.G.,
-on a Linux system, something like `/usr/local/lib/Python3.6`
+on a Linux system, something like `/usr/local/lib/Python3.8`
+
+* Set an environment variable called `PYSTEPSEQ_MIDI_PORT` for a default midi device/port.
+  For example, in Linux, using the `bash` shell, you could add the following to your `~/.bashrc`:
+
+```
+    export PYSTEPSEQ_MIDI_PORT=/dev/snd/midiC1D0
+```
+
+Use a tool like `amidi -l` to find which particular device on your system should be the target of
+`pystepseq`'s output. For example, `hw:1,0` would correspond to `/dev/snd/midiC1D0`
+
 
 * You may also want to edit the variables at the top of the 'constants.py'
 These will reflect what MIDI port you are using (e.g., on Linux, 

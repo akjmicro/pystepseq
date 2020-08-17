@@ -22,6 +22,7 @@
 
 # modules needed:
 import _thread
+import os
 import pickle
 
 from math import ceil, log
@@ -73,7 +74,11 @@ class Pystepseq:
         self.open_port_exists = False
         # automatic init:
         # on a Mac, the variable is a dummy...
-        self.init_midi_port(constants.DEFAULT_MIDI_PORT)
+        self.init_midi_port(
+            os.environ.get(
+                "PYSTEPSEQ_MIDI_PORT", constants.DEFAULT_MIDI_PORT
+            )
+        )
         self.initlists()
         self._pickle_slots = [None for x in range(16)]
         for x in range(16):

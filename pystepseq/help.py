@@ -1,3 +1,13 @@
+def _pager(long_string):
+    count = 0
+    for l in long_string.splitlines():
+        count += 1
+        print(l)
+        if count == 22:
+            input("hit enter for more...")
+            count = 0
+
+
 def help():
     helpstring = """commands:
 
@@ -58,5 +68,7 @@ q4   # save what's going on to slot 4
 4    # replace what's playing with the contents of slot 4
 load mysong # replace all slots with the contents of the file 'mysong'
 save mysong # save all slots to the file 'mysong'
+
+To quit pystepseq, hit CTRL-C, then type quit()
 """
-    print(helpstring)
+    _pager(helpstring)

@@ -21,6 +21,7 @@
 #       MA 02110-1301, USA.
 
 import pickle
+import re
 from readline import *  # noqa
 
 # my modules:
@@ -33,6 +34,12 @@ from pystepseq.lib.scales import *  # noqa
 # a dict which hosts object instances so we can manipulate
 # multiple parameters of multiple instances simultaneously
 active_instances = {}
+
+
+with open("../setup.py") as setup_file:
+    txt = setup_file.read()
+    version_found = re.search(r'version="(.*?)"', txt).group(1)
+    PROMPT = f"pystepseq-{version_found} ('h' for help) -->"
 
 
 def setup_drums():
@@ -496,7 +503,7 @@ def repl():
     trig.run()
     while True:
         try:
-            phrase = input("pystepseq('h' for help)--> ")
+            phrase = input(PROMPT)
             if len(phrase) == 0:
                 continue
             command_parser(phrase)
