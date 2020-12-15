@@ -323,9 +323,9 @@ def get_or_set_volumes(comm):
 
 def get_or_set_space_chance(comm):
     if len(comm) == 2:
-        print(active_instances[comm[0]].sp)
+        print(active_instances[comm[0]].space)
     else:
-        active_instances[comm[0]].sp = int(comm[2:])
+        active_instances[comm[0]].space = int(comm[2:])
 
 
 def get_or_set_scale(comm):

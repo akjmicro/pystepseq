@@ -45,18 +45,33 @@ class Pystepseq:
     to sound by a multicast network Tempotrigger object.
     """
 
+    # fmt: off
+    __slots__ = [
+        "chn", "step", "end", "triggers_per_beat", "beats_per_measure", "_triggers_per_measure",
+        "scl", "len_list", "vol_list", "gate_list", "note_list",
+        "note_noise", "note_depth", "note_repeat", "note_tie",
+        "vol_noise", "vol_depth", "space",
+        "_note", "_note_index", "_note_length", "_bend", "_old_note",
+        "_gate", "_gate_cutoff", "_gate_list", "_vol",
+        "_cycle_idx",  "_step", "_trigger_count",
+        "_MYGROUP", "_MYPORT", "_receiver",  "_open_port_exists",
+        "_data_slots", "_current_slot", "_old_slot",
+        "_saveable_attrs", "_runstate"
+    ]
+    # fmt: on
     def __init__(self, chn=0):
         from . import constants
         from .tempotrigger import openmcastsock
 
+        self._saveable_attrs = [x for x in self.__slots__ if not x.startswith("_")]
         self.chn = chn
-        self.step = -1
+        self._step = -1
         self.end = 16  # num of note events, distinguished from beats
         self.triggers_per_beat = 24
         self.beats_per_measure = 4  # total number of beats in a measure
-        self.triggers_per_measure = self.triggers_per_beat * self.beats_per_measure
+        self._triggers_per_measure = self.triggers_per_beat * self.beats_per_measure
         self.scl = MidiScale(modal)  # noqa
-        self.runstate = 0
+        self._runstate = 0
         self.len_list = []
         self.vol_list = []
         self.gate_list = []
@@ -67,41 +82,39 @@ class Pystepseq:
         self.note_tie = 0
         self.vol_noise = "white"
         self.vol_depth = 20
-        self.sp = 0
-        self.MYGROUP = "225.0.0.250"
-        self.MYPORT = constants.DEFAULT_MULTICAST_PORT
-        self.receiver = openmcastsock(self.MYGROUP, self.MYPORT)
-        self.open_port_exists = False
+        self.space = 0
+        self._MYGROUP = "225.0.0.250"
+        self._MYPORT = constants.DEFAULT_MULTICAST_PORT
+        self._receiver = openmcastsock(self._MYGROUP, self.MYPORT)
+        self._open_port_exists = False
         # automatic init:
         # on a Mac, the variable is a dummy...
         self.init_midi_port(
-            os.environ.get(
-                "PYSTEPSEQ_MIDI_PORT", constants.DEFAULT_MIDI_PORT
-            )
+            os.environ.get("PYSTEPSEQ_MIDI_PORT", constants.DEFAULT_MIDI_PORT)
         )
         self.initlists()
-        self._pickle_slots = [None for x in range(16)]
+        self._data_slots = [None for x in range(16)]
         for x in range(16):
-            self.pickle_slot_save(x)
-        self.current_slot = 0
-        self.old_slot = 0
+            self.data_slot_save(x)
+        self._current_slot = 0
+        self._old_slot = 0
 
-    def pickle_slot_save(self, num):
+    def data_slot_save(self, num):
         slot_dict = {}
-        for att in ["chn", "end", "scl", "note_list", "vol_list", "len_list"]:
-            slot_dict[att] = pickle.dumps(getattr(self, att))
-        self._pickle_slots[num] = slot_dict
+        for att in self._saveable_attrs:
+            slot_dict[att] = getattr(self, att)
+        self._data_slots[num] = slot_dict
 
-    def pickle_slot_recall(self, num):
-        in_slot_dict = self._pickle_slots[num]
+    def data_slot_recall(self, num):
+        in_slot_dict = self._data_slots[num]
         for k in in_slot_dict.keys():
-            setattr(self, k, pickle.loads(in_slot_dict[k]))
+            setattr(self, k, in_slot_dict[k])
 
     def init_midi_port(self, midiport=None):
-        if self.open_port_exists:
+        if self._open_port_exists:
             close_port()
         open_port(midiport)
-        self.open_port_exists = True
+        self._open_port_exists = True
 
     # randomize functions:
     def _note_white(self, start, finish=None):
@@ -188,7 +201,7 @@ class Pystepseq:
         if finish is None:
             finish = len(self.len_list)
         var = self.vol_depth
-        chance = self.sp
+        chance = self.space
         for blah in range(start, finish):
             randnum = 64 + randint(-var, var)  # 64 is half of 127
             if randnum > 127:
@@ -207,7 +220,7 @@ class Pystepseq:
         if finish is None:
             finish = len(self.len_list)
         var = self.vol_depth
-        chance = self.sp
+        chance = self.space
         if start == 0 and finish == 1:
             start = 1
             finish = 2
@@ -232,7 +245,7 @@ class Pystepseq:
         if finish is None:
             finish = len(self.len_list)
         var = self.vol_depth
-        chance = self.sp
+        chance = self.space
         result_list = pink_noise(5, var)
         offset = -1 * (max(result_list) // 2)
         for blah in range(start, finish):
@@ -257,11 +270,11 @@ class Pystepseq:
         total = 0
 
         # re-calc the measure length:
-        self.triggers_per_measure = self.triggers_per_beat * self.beats_per_measure
+        self._triggers_per_measure = self.triggers_per_beat * self.beats_per_measure
 
         # do this while we are below the beat count:
-        while total < self.triggers_per_measure:
-            leftover = self.triggers_per_measure - total
+        while total < self._triggers_per_measure:
+            leftover = self._triggers_per_measure - total
             # filter the choices by what won't go over:
             choice_list = list(filter(lambda x: x <= leftover, choice_list))
             if not choice_list:
@@ -319,60 +332,57 @@ class Pystepseq:
     def looper(self):
         """The looper is the heart of the sequencer"""
         trigger = 0
-        self.trigger_count = 0
-        self.step = -1
-        self.cycle_idx = -1
-        self.note_autocounter = 0
-        self.vol_autocounter = 0
-        self.old_note = 60  # dummy
-        self.bend = 8192
-        self.sounding = 0
-        self.note_length = 24  # init dummy
-        while (self.runstate == 1) or (self.cycle_idx != 0):
+        self._trigger_count = 0
+        self._step = -1
+        self._cycle_idx = -1
+        self._old_note = 60  # dummy
+        self._bend = 8192
+        self._note_length = 24  # init dummy
+        while (self._runstate == 1) or (self._cycle_idx != 0):
             trigger = self.receiver.recv(9)
             triggernum, cyclen = trigger.split(b"|")
             # proceed if it's the first of a note length, and we're running
-            if self.trigger_count == 0:
-                self.step = (self.step + 1) % self.end
+            if self._trigger_count == 0:
+                self._step = (self._step + 1) % self.end
                 # do we have to change slots?
-                if (self.current_slot != self.old_slot) and (self.step == 0):
-                    self.pickle_slot_recall(self.current_slot)
-                    self.old_slot = self.current_slot
+                if (self._current_slot != self._old_slot) and (self._step == 0):
+                    self.data_slot_recall(self._current_slot)
+                    self._old_slot = self._current_slot
                 #####
-                self.note_length = int(self.len_list[self.step % len(self.len_list)])
-                self.vol = self.vol_list[self.step % len(self.vol_list)]
-                self.gate = self.gate_list[self.step % len(self.gate_list)]
-                self.gate_cutoff = int(round(self.note_length * (self.gate / 100)))
-                self.note_index = self.note_list[self.step % len(self.note_list)]
+                self._note_length = int(self.len_list[self._step % len(self.len_list)])
+                self._vol = self.vol_list[self._step % len(self.vol_list)]
+                self._gate = self.gate_list[self._step % len(self.gate_list)]
+                self._gate_cutoff = int(round(self._note_length * (self._gate / 100)))
+                self._note_index = self.note_list[self._step % len(self.note_list)]
                 # protect against < 0
-                if self.note_length < 1:
-                    self.note_length = 1
-                note_off(int(self.chn), int(self.old_note))
-                self.note = self.scl.get_note(self.note_index)
-                if isinstance(self.note, tuple):
-                    self.note, self.bend = self.note[0], self.note[1]
-                    if self.vol > 0:
-                        pitch_bend(int(self.chn), int(self.bend))
-                    note_on(int(self.chn), int(self.note), int(self.vol))
+                if self._note_length < 1:
+                    self._note_length = 1
+                note_off(int(self.chn), int(self._old_note))
+                self._note = self.scl.get_note(self._note_index)
+                if isinstance(self._note, tuple):
+                    self._note, self._bend = self._note[0], self._note[1]
+                    if self._vol > 0:
+                        pitch_bend(int(self.chn), int(self._bend))
+                    note_on(int(self.chn), int(self._note), int(self._vol))
                 else:
-                    if self.bend != 8192:
-                        pitch_bend(int(self.chn), int(self.bend))
-                        self.bend = 8192
-                    note_on(int(self.chn), int(self.note), int(self.vol))
-                self.old_note = self.note
+                    if self._bend != 8192:
+                        pitch_bend(int(self.chn), int(self._bend))
+                        self._bend = 8192
+                    note_on(int(self.chn), int(self._note), int(self._vol))
+                self._old_note = self._note
             # turn note off if the gate value indicates:
-            elif self.trigger_count == self.gate_cutoff:
-                note_off(int(), int(self.old_note))
-            self.trigger_count = (self.trigger_count + 1) % self.note_length
-            self.cycle_idx = (self.cycle_idx + 1) % int(cyclen)
+            elif self._trigger_count == self._gate_cutoff:
+                note_off(int(self.chn), int(self._old_note))
+            self._trigger_count = (self._trigger_count + 1) % self._note_length
+            self._cycle_idx = (self._cycle_idx + 1) % int(cyclen)
 
         # upon receiving a kill signal:
-        note_off(self.chn, self.old_note)
-        self.step = -1
+        note_off(self.chn, self._old_note)
+        self._step = -1
 
     def play(self, immediately=False):
-        if self.runstate == 0:
-            self.runstate = 1
+        if self._runstate == 0:
+            self._runstate = 1
             if not immediately:
                 while True:
                     packet = self.receiver.recv(9)
@@ -382,10 +392,10 @@ class Pystepseq:
             _thread.start_new_thread(self.looper, ())
 
     def stop(self, immediately=False):
-        if self.runstate == 0:
+        if self._runstate == 0:
             return
         if not immediately:
-            self.runstate = 0
+            self._runstate = 0
         else:
-            self.runstate = 0
-            self.cycle_idx = -1
+            self._runstate = 0
+            self._cycle_idx = -1
