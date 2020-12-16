@@ -190,9 +190,9 @@ class MidiScale:
 
     def __init__(self, vectors_str="pent", min=48, max=72, trans=0):
         global perc_scales, microtonal_scales
-        self.min = 48
-        self.max = 72
-        self.trans = 0
+        self.min = min if min >= 0 else 0
+        self.max = max if max <= 127 else 127
+        self.trans = trans
         self.set_scl(vectors_str)
 
     def set_scl(self, vectors_str):

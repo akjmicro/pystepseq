@@ -161,15 +161,6 @@ def get_or_set_tempo(comm):
             print("cannot parse that tempo")
 
 
-def set_mode(comm):
-    current_min = active_instances[comm[0]].scl.min
-    current_max = active_instances[comm[0]].scl.max
-    delta = int(comm[3:])
-    new_min, new_max = current_min + delta, current_max + delta
-    active_instances[comm[0]].scl.set_min(new_min)
-    active_instances[comm[0]].scl.set_max(new_max)
-
-
 def get_or_set_volume_noise_depth(comm):
     if len(comm) == 3:
         print(active_instances[comm[0]].vol_depth)
@@ -334,14 +325,6 @@ def get_or_set_space_chance(comm):
         active_instances[comm[0]].space = int(comm[2:])
 
 
-def get_or_set_scale(comm):
-    if len(comm) == 2:
-        print(active_instances[comm[0]]._scl.slave)
-    else:
-        active_instances[comm[0]]._scl.set_scl(eval(comm[2:]))
-        active_instances[comm[0]].scl = comm[2:]
-
-
 def do_note_fractal(comm):
     myargs = eval(comm[2:])
     active_instances[comm[0]].note_list = fractal_melody(*myargs)
@@ -359,36 +342,65 @@ def get_or_set_notes(comm):
             active_instances[comm[0]].note_list[idx] = eval(val)
 
 
+def get_or_set_scale(comm):
+    if len(comm) == 2:
+        print(active_instances[comm[0]].scl)
+    else:
+        active_instances[comm[0]].scl = comm[2:]
+        active_instances[comm[0]].init_scl()
+
+
+def set_mode(comm):
+    current_min = active_instances[comm[0]].scl_min
+    current_max = active_instances[comm[0]].scl_max
+    delta = int(comm[3:])
+    new_min, new_max = current_min + delta, current_max + delta
+    active_instances[comm[0]].scl_min = new_min
+    active_instances[comm[0]].scl_max = new_max
+    active_instances[comm[0]]._scl.set_min(new_min)
+    active_instances[comm[0]]._scl.set_max(new_max)
+
+
 def get_or_set_scl_min(comm):
     if len(comm) == 2:
-        print(active_instances[comm[0]].scl.min)
+        print(active_instances[comm[0]].scl_min)
     else:
-        active_instances[comm[0]].scl.set_min(int(comm[2:]))
+        min = int(comm[2:])
+        active_instances[comm[0]].scl_min = min
+        active_instances[comm[0]]._scl.set_min(min)
 
 
 def get_or_set_scl_max(comm):
     if len(comm) == 2:
-        print(active_instances[comm[0]].scl.max)
+        print(active_instances[comm[0]].scl_max)
     else:
-        active_instances[comm[0]].scl.set_max(int(comm[2:]))
+        max = int(comm[2:])
+        active_instances[comm[0]].scl_max = max
+        active_instances[comm[0]]._scl.set_max(max)
 
 
 def get_or_set_scl_transposition(comm):
     if len(comm) == 2:
-        print(active_instances[comm[0]].scl.trans)
+        print(active_instances[comm[0]].scl_trans)
     else:
-        active_instances[comm[0]].scl.set_trans(int(comm[2:]))
+        trans = int(comm[2:])
+        active_instances[comm[0]].scl_trans = trans
+        active_instances[comm[0]]._scl.set_trans(trans)
 
 
 def get_or_set_scl_mxt(comm):
     if len(comm) == 2:
-        print(active_instances[comm[0]].scl.min)
-        print(active_instances[comm[0]].scl.max)
-        print(active_instances[comm[0]].scl.trans)
+        print(active_instances[comm[0]].scl_min)
+        print(active_instances[comm[0]].scl_max)
+        print(active_instances[comm[0]].scl_trans)
     else:
         try:
-            min_max_trans_args = eval(comm[2:])
-            active_instances[comm[0]].scl.set_min_max_trans(*min_max_trans_args)
+            args = comm[2:].split(",")
+            min, max, trans = int(args[0]), int(args[1]), int(args[2])
+            active_instances[comm[0]].scl_min = min
+            active_instances[comm[0]].scl_max = max
+            active_instances[comm[0]].scl_trans = trans
+            active_instances[comm[0]]._scl.set_min_max_trans(min, max, trans)
         except TypeError:
             print("Cannot parse the arguments for min_max_trans")
 
