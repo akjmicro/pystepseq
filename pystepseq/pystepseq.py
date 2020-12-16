@@ -23,7 +23,6 @@
 # modules needed:
 import _thread
 import os
-import pickle
 from copy import deepcopy
 from math import ceil, log
 from random import randint, choice
