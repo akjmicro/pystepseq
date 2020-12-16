@@ -5,32 +5,41 @@ from math import log2
 
 from pystepseq.lib.midi_functions import see_saw
 
+
+perc_list = list(range(28, 52))
+perc_list.extend([54, 58, 59, 61, 67, 68, 69, 70, 73, 74, 75, 77, 78, 79, 80])
+perc_list.remove(49)
+
+
 # gaps between neighboring ascending notes, '0' is an assumed starting point.
-chromatic = [1]
-whole_tone = [2]
-octatonic = [2, 1]
-modal = [2, 2, 1, 2, 2, 2, 1]
-pentatonic = [2, 3, 2, 2, 3]
-gypsy = [1, 3, 1, 2, 1, 3, 1]
-overtone = [2, 2, 2, 1, 2, 1, 2]
-equable = [1, 2, 2, 2, 1, 2, 2]
+scale_vectors = {
+    "chromatic": [1],
+    "whole_tone": [2],
+    "octatonic": [2, 1],
+    "modal": [2, 2, 1, 2, 2, 2, 1],
+    "pentatonic": [2, 3, 2, 2, 3],
+    "gypsy": [1, 3, 1, 2, 1, 3, 1],
+    "overtone": [2, 2, 2, 1, 2, 1, 2],
+    "equable": [1, 2, 2, 2, 1, 2, 2],
+    "perc": perc_list,
+    "tabla": [41, 42, 43, 44, 45, 46, 47, 50],
+    "GMKit": [36, 37, 38, 42, 44, 46, 48],
+    "TR808": [36, 37, 38, 44, 45, 46, 47],
+    "HardElectro": list(range(36, 52, 1)),
+}
 
 # nicknames:
-pent = pentatonic
-octa = octatonic
-overt = overtone
-wht = whole_tone
-chrom = chromatic
+for name, nickname in [
+    ("pent", "pentatonic"),
+    ("octa", "octatonic"),
+    ("overt", "overtone"),
+    ("wht", "whole_tone"),
+    ("chrom", "chromatic"),
+]:
+    scale_vectors[name] = scale_vectors[nickname]
 
-# percussion scales:
-perc = list(range(28, 52))
-perc.extend([54, 58, 59, 61, 67, 68, 69, 70, 73, 74, 75, 77, 78, 79, 80])
-perc.remove(49)
-tabla = [41, 42, 43, 44, 45, 46, 47, 50]
-GMKit = [36, 37, 38, 42, 44, 46, 48]
-TR808 = [36, 37, 38, 44, 45, 46, 47]
-HardElectro = list(range(36, 52, 1))
-
+# our percussion scales:
+perc_scales = ["perc", "tabla", "GMKit", "TR808", "HardElectro"]
 
 ######################
 # microtonal scales: #
@@ -51,9 +60,11 @@ def cents(x):
     return log2(x) * 1200.00
 
 
-edo5 = [note_and_bend(x / 5.0 * 1200.0) for x in range(-15, 20)]
+microtonal_vectors = {}
 
-otonal = [
+microtonal_vectors["edo5"] = [note_and_bend(x / 5.0 * 1200.0) for x in range(-15, 20)]
+
+microtonal_vectors["otonal"] = [
     note_and_bend(x)
     for x in [
         cents(y)
@@ -81,7 +92,7 @@ otonal = [
     ]
 ]
 
-utonal = [
+microtonal_vectors["utonal"] = [
     note_and_bend(x)
     for x in [
         cents(y)
@@ -112,7 +123,7 @@ utonal = [
 
 # an "overtone" scale that is based on 21\34-edo 8-note scale,
 # distributed freq-wise ala an overtone series.
-fibotonal = [
+microtonal_vectors["fibotonal"] = [
     note_and_bend(x)
     for x in [
         cents(y)
@@ -154,22 +165,19 @@ fibotonal = [
 
 
 # a place to keep our microtonal scales:
-microtonal_scales = [edo5, otonal, utonal, fibotonal]
+microtonal_scales = ["edo5", "otonal", "utonal", "fibotonal"]
 #############################
 # end microtonal scale code #
 #############################
 
-# our percussion scales:
-perc_scales = [perc, tabla, GMKit, TR808, HardElectro]
 
-
-def create_scale(vectors, min=0, max=127):
+def create_scale(vectors_str, min=0, max=127):
     """Create a full-range scale in MIDI note numbers
     from a vector set and a range"""
     notes = [min]
     cur = min
     while cur <= max:
-        for v in vectors:
+        for v in scale_vectors[vectors_str]:
             cur += v
             notes.append(cur)
     return notes
@@ -180,28 +188,28 @@ class MidiScale:
     issues.  Folds in the bounce method, mode and transposition, etc.
     """
 
-    def __init__(self, vectors=pent, min=48, max=72, trans=0):
+    def __init__(self, vectors_str="pent", min=48, max=72, trans=0):
         global perc_scales, microtonal_scales
         self.min = 48
         self.max = 72
         self.trans = 0
-        self.set_scl(vectors)
+        self.set_scl(vectors_str)
 
-    def set_scl(self, vectors):
-        if vectors in perc_scales:
-            self.master_scale = vectors
-            self.slave = vectors
+    def set_scl(self, vectors_str):
+        if vectors_str in perc_scales:
+            self.master_scale = scale_vectors[vectors_str]
+            self.slave = scale_vectors[vectors_str]
             self.size = len(self.slave)
             self.get_note = self._get_regular_note
-        elif vectors in microtonal_scales:
-            self.master_scale = vectors
-            self.slave = vectors
+        elif vectors_str in microtonal_scales:
+            self.master_scale = microtonal_vectors[vectors_str]
+            self.slave = microtonal_vectors[vectors_str]
             self.size = len(self.slave)
             self.min = self.slave[0][0]
             self.max = self.slave[-1][0]
             self.get_note = self._get_microtonal_note
         else:
-            self.master_scale = create_scale(vectors)
+            self.master_scale = create_scale(vectors_str)
             self.get_note = self._get_regular_note
             self._update_slave()
 

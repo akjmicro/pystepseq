@@ -24,7 +24,7 @@
 import _thread
 import os
 import pickle
-
+from copy import deepcopy
 from math import ceil, log
 from random import randint, choice
 
@@ -40,6 +40,34 @@ from pystepseq.lib.scales import *  # noqa
 from pystepseq.lib.pink_noise import pink_noise
 
 
+class DataSlot:
+    __slots__ = [
+        "chn",
+        "end",
+        "triggers_per_beat",
+        "beats_per_measure",
+        "scl",
+        "scl_min",
+        "scl_max",
+        "scl_trans",
+        "len_list",
+        "vol_list",
+        "gate_list",
+        "note_list",
+        "note_noise",
+        "note_depth",
+        "note_repeat",
+        "note_tie",
+        "vol_noise",
+        "vol_depth",
+        "space",
+    ]
+
+    def __init__(self):
+        for slot in self.__slots__:
+            setattr(self, slot, None)
+
+
 class Pystepseq:
     """The Pystepseq object defines a MIDI voice that will be triggered
     to sound by a multicast network Tempotrigger object.
@@ -47,19 +75,19 @@ class Pystepseq:
 
     # fmt: off
     __slots__ = [
-        "chn", "step", "end", "triggers_per_beat", "beats_per_measure", "_triggers_per_measure",
-        "scl", "len_list", "vol_list", "gate_list", "note_list",
+        "chn", "end", "triggers_per_beat", "beats_per_measure", "_triggers_per_measure",
+        "scl", "scl_min", "scl_max", "scl_trans", "len_list", "vol_list", "gate_list", "note_list",
         "note_noise", "note_depth", "note_repeat", "note_tie",
         "vol_noise", "vol_depth", "space",
-        "_note", "_note_index", "_note_length", "_bend", "_old_note",
+        "_scl", "_note", "_note_index", "_note_length", "_bend", "_old_note",
         "_gate", "_gate_cutoff", "_gate_list", "_vol",
         "_cycle_idx",  "_step", "_trigger_count",
         "_MYGROUP", "_MYPORT", "_receiver",  "_open_port_exists",
-        "_data_slots", "_current_slot", "_old_slot",
-        "_saveable_attrs", "_runstate"
+        "_data_slots", "_requested_slot", "_current_slot",
+        "_saveable_attrs", "_runstate",
     ]
     # fmt: on
-    def __init__(self, chn=0):
+    def __init__(self, chn=0, data_slots={}):
         from . import constants
         from .tempotrigger import openmcastsock
 
@@ -70,7 +98,10 @@ class Pystepseq:
         self.triggers_per_beat = 24
         self.beats_per_measure = 4  # total number of beats in a measure
         self._triggers_per_measure = self.triggers_per_beat * self.beats_per_measure
-        self.scl = MidiScale(modal)  # noqa
+        self.scl = "modal"  # noqa
+        self.scl_min = 48
+        self.scl_max = 72
+        self.scl_trans = 0
         self._runstate = 0
         self.len_list = []
         self.vol_list = []
@@ -85,30 +116,65 @@ class Pystepseq:
         self.space = 0
         self._MYGROUP = "225.0.0.250"
         self._MYPORT = constants.DEFAULT_MULTICAST_PORT
-        self._receiver = openmcastsock(self._MYGROUP, self.MYPORT)
+        self._receiver = openmcastsock(self._MYGROUP, self._MYPORT)
         self._open_port_exists = False
+        self._data_slots = [DataSlot() for x in range(16)]
+        self._requested_slot = 0
+        self._current_slot = 0
         # automatic init:
         # on a Mac, the variable is a dummy...
+        self.init_scl()
         self.init_midi_port(
             os.environ.get("PYSTEPSEQ_MIDI_PORT", constants.DEFAULT_MIDI_PORT)
         )
-        self.initlists()
-        self._data_slots = [None for x in range(16)]
-        for x in range(16):
-            self.data_slot_save(x)
-        self._current_slot = 0
-        self._old_slot = 0
+        if data_slots:
+            self._init_data_slots(data_slots)
+        else:
+            self.init_random_lists()
+
+    def _init_data_slots(self, data_slots):
+        for i, ds in enumerate(data_slots):
+            if ds:
+                local_slot = DataSlot()
+                for k, v in ds.items():
+                    setattr(local_slot, k, v)
+                self._data_slots[i] = local_slot
+        for i, ds in enumerate(self._data_slots):
+            if ds.note_list:
+                self.data_slot_recall(i)
+                self._data_update()
+                break
+        if not self.len_list:
+            print("No data found in loaded sequence; defaulting to randomization...")
+            self.init_random_lists()
+
+    def init_scl(self):
+        self._scl = MidiScale(self.scl, self.scl_min, self.scl_max, self.scl_trans)
 
     def data_slot_save(self, num):
-        slot_dict = {}
-        for att in self._saveable_attrs:
-            slot_dict[att] = getattr(self, att)
-        self._data_slots[num] = slot_dict
+        self._requested_slot, self._current_slot = num, num
+        data_slot = DataSlot()
+        for attr in self._saveable_attrs:
+            val = deepcopy(getattr(self, attr))
+            setattr(data_slot, attr, val)
+        self._data_slots[num] = data_slot
+
+    def _data_update(self):
+        data_slot = self._data_slots[self._requested_slot]
+        for k in data_slot.__slots__:
+            val = deepcopy(getattr(data_slot, k))
+            setattr(self, k, val)
+        self.init_scl()
+        self._triggers_per_measure = self.triggers_per_beat * self.beats_per_measure
+        self._current_slot = self._requested_slot
 
     def data_slot_recall(self, num):
-        in_slot_dict = self._data_slots[num]
-        for k in in_slot_dict.keys():
-            setattr(self, k, in_slot_dict[k])
+        # check that the slot has data:
+        if getattr(self._data_slots[num], "note_list"):
+            self._requested_slot = num
+        else:
+            print(f"slot {num} has no data, defaulting to slot 0...")
+            self._requested_slot = 0
 
     def init_midi_port(self, midiport=None):
         if self._open_port_exists:
@@ -124,11 +190,11 @@ class Pystepseq:
         var = self.note_depth
         chance_repeat = self.note_repeat
         chance_tie = self.note_tie
-        scale_midpoint = self.scl.size // 2
+        scale_midpoint = self._scl.size // 2
         for blah in range(start, finish):
             randnum = scale_midpoint + randint(-var, var)
-            if randnum > self.scl.size:
-                randnum = self.scl.size - (randnum - self.scl.size)
+            if randnum > self._scl.size:
+                randnum = self._scl.size - (randnum - self._scl.size)
             if randnum < 0:
                 randnum = abs(randnum)
             if chance_repeat >= randint(1, 100):  # for repeat
@@ -155,7 +221,7 @@ class Pystepseq:
             offset = randint(-var, var)
             current = self.note_list[blah - 1]
             new = current + offset
-            if new > self.scl.size:
+            if new > self._scl.size:
                 new = current - offset
             if new < 0:
                 new = abs(new)
@@ -176,14 +242,14 @@ class Pystepseq:
         var = self.note_depth
         chance_repeat = self.note_repeat
         chance_tie = self.note_tie
-        scale_midpoint = self.scl.size // 2
+        scale_midpoint = self._scl.size // 2
         finish_pow = int(ceil(log(finish, 2)))
         result_list = pink_noise(finish_pow, var)
         offset = -1 * (max(result_list) // 2)
         for blah in range(start, finish):
             randnum = scale_midpoint + (result_list[blah - 1] + offset)
-            if randnum > self.scl.size:
-                randnum = self.scl.size - (randnum - self.scl.size)
+            if randnum > self._scl.size:
+                randnum = self._scl.size - (randnum - self._scl.size)
             if randnum < 0:
                 randnum = abs(randnum)
             if chance_repeat >= randint(1, 100):  # for repeat
@@ -323,7 +389,7 @@ class Pystepseq:
         self.note_list = [choice(notes) for x in range(32)]
         self.vol_list = [choice(vols) for x in range(32)]
 
-    def initlists(self):
+    def init_random_lists(self):
         self.randomize_lengths()
         self.randomize_gates()
         self.randomize_volumes()
@@ -339,15 +405,14 @@ class Pystepseq:
         self._bend = 8192
         self._note_length = 24  # init dummy
         while (self._runstate == 1) or (self._cycle_idx != 0):
-            trigger = self.receiver.recv(9)
+            trigger = self._receiver.recv(9)
             triggernum, cyclen = trigger.split(b"|")
             # proceed if it's the first of a note length, and we're running
             if self._trigger_count == 0:
                 self._step = (self._step + 1) % self.end
                 # do we have to change slots?
-                if (self._current_slot != self._old_slot) and (self._step == 0):
-                    self.data_slot_recall(self._current_slot)
-                    self._old_slot = self._current_slot
+                if (self._requested_slot != self._current_slot) and (self._step == 0):
+                    self._data_update()
                 #####
                 self._note_length = int(self.len_list[self._step % len(self.len_list)])
                 self._vol = self.vol_list[self._step % len(self.vol_list)]
@@ -358,7 +423,7 @@ class Pystepseq:
                 if self._note_length < 1:
                     self._note_length = 1
                 note_off(int(self.chn), int(self._old_note))
-                self._note = self.scl.get_note(self._note_index)
+                self._note = self._scl.get_note(self._note_index)
                 if isinstance(self._note, tuple):
                     self._note, self._bend = self._note[0], self._note[1]
                     if self._vol > 0:
@@ -385,7 +450,7 @@ class Pystepseq:
             self._runstate = 1
             if not immediately:
                 while True:
-                    packet = self.receiver.recv(9)
+                    packet = self._receiver.recv(9)
                     num, cyclen = packet.split(b"|")
                     if int(num) == int(cyclen) - 1:
                         break

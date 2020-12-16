@@ -23,6 +23,8 @@
 import pickle
 import re
 from pathlib import Path
+
+import json
 from readline import *  # noqa
 
 # my modules:
@@ -49,16 +51,16 @@ def setup_drums():
     # bass drum sound:
     active_instances["z"] = Pystepseq(10)
     z = active_instances["z"]
-    z.scl.set_scl(TR808)
-    z.scl.set_min_max_trans(36, 60, 0)
+    z._scl.set_scl(TR808)
+    z._scl.set_min_max_trans(36, 60, 0)
     z.len_list = [24]
     z.note_list = [0]
     z.vol_list = [80]
     # other drums:
     active_instances["x"] = Pystepseq(10)
     x = active_instances["x"]
-    x.scl.set_scl(TR808)
-    x.scl.set_min_max_trans(36, 60, 0)
+    x._scl.set_scl(TR808)
+    x._scl.set_min_max_trans(36, 60, 0)
     x.len_list = [6]
     x.randomize_drums()
 
@@ -78,29 +80,33 @@ def change(instances, notes=1, vols=1, lengths=1, gates=1):
             active_instances[i].randomize_gates()
 
 
-def slot_queue_save(slot):
+def slot_queue_save(slot_num):
     for i in active_instances.values():
-        i.pickle_slot_save(slot)
+        i.data_slot_save(slot_num)
 
 
-def slot_queue_recall(slot):
+def slot_queue_recall(slot_num):
     for i in active_instances.values():
-        i.current_slot = slot
+        i.data_slot_recall(slot_num)
 
 
 def save_song(filename):
-    outfile = open(filename, "wb")
-    pickle.dump(active_instances, outfile)
-    outfile.close()
+    outdict = {}
+    for insname, insobj in active_instances.items():
+        inner = [{k: getattr(ds, k) for k in ds.__slots__} for ds in insobj._data_slots]
+        outdict[insname] = inner
+    with open(filename, "w") as outfile:
+        json.dump(outdict, outfile)
     print("wrote song to %s" % filename)
 
 
 def load_song(filename):
-    infile = open(filename, "rb")
-    active_instances = pickle.load(infile)
-    for k in active_instances:
-        exec("%s = active_instances['%s']" % (k, k)) in globals()
-        active_instances[k].init_midi_port()
+    global active_instances
+    with open(filename) as infile:
+        data = json.load(infile)
+    for k, v in data.items():
+        if k not in active_instances:
+            active_instances[k] = Pystepseq(data_slots=v)
     print("loaded song %s" % filename)
 
 
@@ -330,9 +336,10 @@ def get_or_set_space_chance(comm):
 
 def get_or_set_scale(comm):
     if len(comm) == 2:
-        print(active_instances[comm[0]].scl.slave)
+        print(active_instances[comm[0]]._scl.slave)
     else:
-        active_instances[comm[0]].scl.set_scl(eval(comm[2:]))
+        active_instances[comm[0]]._scl.set_scl(eval(comm[2:]))
+        active_instances[comm[0]].scl = comm[2:]
 
 
 def do_note_fractal(comm):
