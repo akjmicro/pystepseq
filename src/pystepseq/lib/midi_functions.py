@@ -1,58 +1,51 @@
-#!/usr/bin/python3
-
 from operator import xor
 
-_port = None
+from pyportmidi import *
 
 
-def open_port(dummy_arg):
-    global _port
-    _port = open(dummy_arg, "wb")
-    if _port:
+_outport = None
+
+
+def open_port(devnum):
+    global _outport
+    pm_init()
+    _outport = PmOutput(int(devnum))
+    if _outport:
         print("Open successful")
     else:
         print("Open failed")
 
 
-# only for Linux, to make the Mac-style simplecoremidi API work:
-def send_midi(input_tuple):
-    global _port
-    _port.write(
-        bytes("%c%c%c" % (input_tuple[0], input_tuple[1], input_tuple[2]), "latin-1")
-    )
-    _port.flush()
-
-
 def pitch_bend(channel, bend):
     low_byte = bend & 127
     high_byte = bend >> 7
-    send_midi((0xE0 + channel, low_byte, high_byte))
+    _outport.write_short(0xE0 + channel, low_byte, high_byte)
 
 
 def pb(channel, bend):
     #   bend = int((bend - 8192.0)/128)
-    send_midi((0xE0 + channel, 0x00, (bend % 128)))
+    _outport.write_short(0xE0 + channel, 0x00, (bend % 128))
 
 
 def note_on(channel, note, volume):
-    send_midi((0x90 + channel, note, volume))
+    _outport.note_on(note, volume, channel)
 
 
 def note_off(channel, note):
-    send_midi((0x90 + channel, note, 0))
+    _outport.note_off(note, channel)
 
 
 def program_change(channel, program):
-    send_midi((0xC0 + channel, program % 127, 0))
+    _outport.write_short(0xC0 + channel, program % 127, 0)
 
 
 def control(channel, controller, value):
-    send_midi((0xB0 + channel, controller, value))
+    _outport.write_short(0xB0 + channel, controller, value)
 
 
 def all_notes_off():
     for channel in range(16):
-        send_midi((0xB0 + channel, 123, 0))
+        _outport.write_short(0xB0 + channel, 123, 0)
 
 
 def sysex_tuning_dump_12(tuning, bank, preset, name):
@@ -73,13 +66,12 @@ MIDI SYSEX message to the open device"""
         chksum = xor(chksum, d)
     data.append(chksum & 0x7F)
     data.append(0xF7)
-    for d in data:
-        send_midi("%c" % d)
+    _outport.write_sys_ex(0, data)
     print(data)
 
 
 def close_port():
-    _port.close()
+    _outport.close()
 
 
 # standard midi file functions:

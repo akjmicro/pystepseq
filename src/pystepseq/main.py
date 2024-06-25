@@ -39,9 +39,9 @@ from pystepseq.lib.scales import *  # noqa
 active_instances = {}
 
 
-with open(Path(__file__).parent.parent / "setup.py") as setup_file:
-    txt = setup_file.read()
-    version_found = re.search(r'version="(.*?)"', txt).group(1)
+with open(Path(__file__).parent.parent.parent / "pyproject.toml") as toml_file:
+    txt = toml_file.read()
+    version_found = re.search(r'version = "(.*?)"', txt).group(1)
     PROMPT = f"pystepseq-{version_found} ('h' for help) --> "
 
 
