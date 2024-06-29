@@ -8,12 +8,15 @@ _outport = None
 
 def open_port(devnum):
     global _outport
-    pm_init()
-    _outport = PmOutput(int(devnum))
-    if _outport:
-        print("Open successful")
+    if not _outport:
+        pm_init()
+        _outport = PmOutput(int(devnum))
+        if _outport:
+            print("Open successful")
+        else:
+            print("Open failed")
     else:
-        print("Open failed")
+        print("Port already opening; ignoring")
 
 
 def pitch_bend(channel, bend):

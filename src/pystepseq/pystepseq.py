@@ -124,7 +124,7 @@ class Pystepseq:
         # on a Mac, the variable is a dummy...
         self.init_scl()
         self.init_midi_port(
-            os.environ.get("PYSTEPSEQ_MIDI_DEVNUM", constants.DEFAULT_MIDI_DEVNUM)
+            os.environ.get("PORTMIDI_DEVNUM", constants.PORTMIDI_DEVNUM)
         )
         if data_slots:
             self._init_data_slots(data_slots)
